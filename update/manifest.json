@@ -1,0 +1,39 @@
+{
+ "app": "LOTS Cambridge Learning Hub (Master, Windows)",
+ "version": "4.0",
+ "date": "2026-11-13",
+ "minSetup": "4.0",
+ "notes": "New Explore & Explain stage for all 194 lessons, two-part clock, annotate bar, projectable colour check, print packs and 43 international case studies.",
+ "files": [
+  {
+   "name": "hub.html",
+   "path": "dist/hub.html",
+   "sha256": "82f4682de2cf03c0afac3e3eb43c9da44f878e0683f907d3c50c1baffe0cbd12",
+   "size": 43903508
+  },
+  {
+   "name": "picker.html",
+   "path": "dist/picker.html",
+   "sha256": "c8a1e2b3aa2373ed2e7bc29dcc10c894f3f2b7e448e1fdf89d2a92825e1bcef8",
+   "size": 2974512
+  },
+  {
+   "name": "launch.ps1",
+   "path": "dist/launch.ps1",
+   "sha256": "738562b79ad5fc6b8310c4570792c1fd8cba2e5d04920431700fbcae89a099ed",
+   "size": 4358
+  },
+  {
+   "name": "launch.vbs",
+   "path": "dist/launch.vbs",
+   "sha256": "defa99c11fc631278d6477849e3715d9b082c21c19b9a1183c7b5a84ee3458a9",
+   "size": 340
+  },
+  {
+   "name": "update.ps1",
+   "path": "dist/update.ps1",
+   "sha256": "620f258e6af9e7446a962d4b3dc5eceb1ecb6e8daba3cd74325c5806ccbaa21d",
+   "size": 5235
+  }
+ ]
+}

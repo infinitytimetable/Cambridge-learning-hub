@@ -1,0 +1,24 @@
+/* ===== BIOLOGY 0610: unit skeletons. Chemistry units are parked in CHEM_U while biology data loads; bio9.js restores them. ===== */
+const CHEM_U=U.splice(0,U.length);
+UN(1,"Cl","Characteristics and classification of living organisms","What makes something alive, and how scientists sort the living world.",[],[],[]);
+UN(2,"Or","Organisation of the organism","Cells, organelles, tissues and organs, and how to work with microscope sizes.",[],[],[]);
+UN(3,"Mv","Movement into and out of cells","Diffusion, osmosis and active transport.",[],[],[]);
+UN(4,"Bm","Biological molecules","Carbohydrates, fats, proteins, water and DNA, plus the food tests.",[],[],[]);
+UN(5,"En","Enzymes","Biological catalysts and the factors that change their activity.",[],[],[]);
+UN(6,"Pn","Plant nutrition","Photosynthesis, limiting factors and the structure of the leaf.",[],[],[]);
+UN(7,"Hn","Human nutrition","Diet, the digestive system, digestion and absorption.",[],[],[]);
+UN(8,"Tp","Transport in plants","Xylem, phloem, water uptake, transpiration and translocation.",[],[],[]);
+UN(9,"Ta","Transport in animals","The heart, blood vessels and blood.",[],[],[]);
+UN(10,"Di","Diseases and immunity","Pathogens, transmission, body defences and vaccination.",[],[],[]);
+UN(11,"Ge","Gas exchange in humans","Lungs, breathing, exercise and the effects of smoking.",[],[],[]);
+UN(12,"Rs","Respiration","Aerobic and anaerobic respiration and energy release.",[],[],[]);
+UN(13,"Ex","Excretion in humans","Removing waste: the kidneys, urea and dialysis.",[],[],[]);
+UN(14,"Co","Coordination and response","Nerves, reflexes, sense organs, hormones, homeostasis and tropisms.",[],[],[]);
+UN(15,"Dr","Drugs","Medicinal and misused drugs, antibiotics and addiction.",[],[],[]);
+UN(16,"Re","Reproduction","Asexual and sexual reproduction in plants and humans, hormones and STIs.",[],[],[]);
+UN(17,"In","Inheritance","Chromosomes, genes, protein synthesis, mitosis, meiosis and genetic crosses.",[],[],[]);
+UN(18,"Vs","Variation and selection","Types of variation, adaptation and natural and artificial selection.",[],[],[]);
+UN(19,"Oe","Organisms and their environment","Energy flow, food webs, nutrient cycles and populations.",[],[],[]);
+UN(20,"Hi","Human influences on ecosystems","Food supply, habitat destruction, pollution and conservation.",[],[],[]);
+UN(21,"Bt","Biotechnology and genetic modification","Using microorganisms and genetic engineering to make useful products.",[],[],[]);
+const BSET=(n,lessons,quiz,pp)=>{const u=U.find(x=>x.n===n);if(!u)throw new Error("BSET: no topic "+n);u.lessons=lessons;u.quiz=quiz;u.pp=pp||[]};
