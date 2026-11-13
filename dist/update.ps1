@@ -4,7 +4,7 @@
 # swaps them in. The new version is used the next time the Hub opens. Saved progress and the
 # Documents\LOTS Hub Content folder are never touched. Everything is written to update-log.txt.
 $ErrorActionPreference = 'Stop'
-$Repo     = 'infinitytimetable/cambridge-learning-hub'
+$Repo     = 'infinitytimetable/Cambridge-learning-hub'
 $Branch   = 'main'
 $here     = Split-Path -Parent $MyInvocation.MyCommand.Path
 $logf     = Join-Path $here 'update-log.txt'
