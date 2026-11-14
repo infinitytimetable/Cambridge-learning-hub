@@ -272,6 +272,12 @@ function nxInline(n){
   });
   return o;
 }
+/* pictures for Word and PDF: always PNG or JPEG (WebP and others are redrawn), at most 1400 px */
+function nxStdImg(src){return new Promise(r=>{if(!src)return r(null);const i=new Image();i.onload=()=>{const w=i.naturalWidth,h=i.naturalHeight;if(!w||!h)return r(null);const m=Math.min(1,1400/Math.max(w,h));
+  if(/^data:image\/(png|jpe?g);/i.test(src)&&m===1)return r({dataUrl:src,w,h});
+  try{const c=document.createElement("canvas");c.width=Math.max(1,Math.round(w*m));c.height=Math.max(1,Math.round(h*m));const g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,c.width,c.height);g.drawImage(i,0,0,c.width,c.height);
+    const png=/^data:image\/(png|svg|gif)/i.test(src)||/\.(png|svg|gif)$/i.test(src);r({dataUrl:c.toDataURL(png?"image/png":"image/jpeg",0.9),w:c.width,h:c.height})}catch(e){r(null)}};i.onerror=()=>r(null);i.src=src})}
+const nxInlineOnly=el=>[...el.childNodes].every(n=>n.nodeType===3||n.nodeType===8||(n.nodeType===1&&/^(B|I|EM|STRONG|SUB|SUP|SPAN|A|BR|SMALL|U|MARK|CODE|ABBR)$/.test(n.tagName)));
 function nxImgSize(src){return new Promise(r=>{const i=new Image();i.onload=()=>r({w:i.naturalWidth,h:i.naturalHeight});i.onerror=()=>r(null);i.src=src})}
 async function nxBlocks(root,out){
   for(const el of [...root.children]){
@@ -282,7 +288,10 @@ async function nxBlocks(root,out){
     else if(t==="TABLE"){const rows=[...el.querySelectorAll("tr")].map(r=>[...r.children].map(c=>nxInline(c).trim()));if(rows.length){const hd=el.querySelector("th")?rows.shift():null;out.push({t:"table",head:hd,rows,fontSize:9})}}
     else if(t==="svg"||t==="SVG"||el.querySelector&&el.querySelector(":scope > svg")&&!el.textContent.trim()){
       try{const r=await HUBDOC.svgToPng(t.toLowerCase()==="svg"?el:el.querySelector("svg"),600);out.push({t:"img",dataUrl:r.dataUrl,w:r.w,h:r.h,widthPct:Math.min(100,Math.round(r.w/6.2))})}catch(e){}}
-    else if(t==="IMG"&&/^data:/.test(el.getAttribute("src")||"")){const d=el.getAttribute("src"),z=await nxImgSize(d);if(z)out.push({t:"img",dataUrl:d,w:z.w,h:z.h,widthPct:Math.min(100,Math.round(z.w/6.2)),caption:el.getAttribute("alt")||""})}
+    else if(t==="IMG"&&el.getAttribute("src")){const z=await nxStdImg(el.getAttribute("src"));if(z)out.push({t:"img",dataUrl:z.dataUrl,w:z.w,h:z.h,widthPct:Math.min(85,Math.max(30,Math.round(z.w/6.2))),caption:el.getAttribute("alt")||""})}
+    else if(t==="FIGURE"&&el.querySelector("img")&&!el.querySelector("svg")){const im=el.querySelector("img"),cap=el.querySelector("figcaption"),z=await nxStdImg(im.getAttribute("src")||"");if(z)out.push({t:"img",dataUrl:z.dataUrl,w:z.w,h:z.h,widthPct:Math.min(85,Math.max(30,Math.round(z.w/6.2))),caption:cap?nxInline(cap).trim():(im.getAttribute("alt")||"")})}
+    else if((t==="DIV"||t==="ASIDE"||t==="SECTION")&&nxInlineOnly(el)&&el.textContent.trim()){const fb=el.firstChild&&el.firstChild.nodeType===1&&/^(B|STRONG)$/.test(el.firstChild.tagName)?el.firstChild:null,c=el.cloneNode(true);if(fb)c.removeChild(c.firstChild);const tx=nxInline(c).trim(),title=fb?fb.textContent.trim():"";
+      if(fb||/key|tip|note|warn|box|rem/.test(el.className||""))out.push({t:"box",tone:/warn|safe/.test(el.className||"")?"warn":"info",title,text:tx});else if(tx)out.push({t:"p",text:tx})}
     else if(el.children.length)await nxBlocks(el,out);
     else{const x=nxInline(el).trim();if(x)out.push({t:"p",text:x})}
   }
@@ -315,6 +324,87 @@ async function exportNotes(l,u,secs,fmt,btn){
   btn.disabled=false;
 }
 
+/* ---------- Master hub: notes export (learner handout or teacher version) with the school name and logo from Settings ---------- */
+const nxFirst=(html,n)=>{const d=document.createElement("div");d.innerHTML=F(String(html||"").replace(/\{\{\w+\}\}/g,""));const ps=[...d.querySelectorAll("p")].map(p=>p.textContent).join(" ")||d.textContent;const t=ps.replace(/\s+/g," ").trim();const ss=t.match(/[^.?!]+[.?!]+/g)||[t];return ss.slice(0,n||2).join(" ").trim().slice(0,400)};
+async function exportNotesT(l,u,secs,who,fmt,say){
+  const T=who==="teacher",SET=HUBSET.get(),school=(SET.teacher&&SET.teacher.school||"").trim();
+  const logoSrc=(SET.assess&&SET.assess.logo)||(typeof ASSESS_LOGO!=="undefined"?ASSESS_LOGO:"");
+  let M=null;try{const i=LS.indexOf(l);const ctx={l,u,U:SUBJ[subKey].units,sub:subKey,SUB,secs,prev:i>0?LS[i-1]:null,F};M=X4.model(ctx)}catch(e){console.warn(e)}
+  const act=M?(M.acts.find((x,j)=>String(j)===String(M.S.act))||M.acts[0]||null):null;
+  const B=[];
+  /* header: logo, school, subject */
+  if(logoSrc){const z=await nxStdImg(logoSrc);if(z)B.push({t:"img",dataUrl:z.dataUrl,w:z.w,h:z.h,widthPct:Math.round(Math.min(16,16*z.w/z.h))})}
+  if(school)B.push({t:"p",text:school,bold:true,size:15,align:"center",after:20});
+  B.push({t:"p",text:`${SUB.title}  |  Topic ${u.n}: ${plain(u.name)}`,size:10,color:"555555",align:"center"});
+  B.push({t:"band",text:`Lesson ${l.no}: ${plain(l.t)}${T?"  ·  Teacher version":""}`});
+  if(!T)B.push({t:"p",text:"Name: ________________________________   Class: ____________   Date: ____________",size:10});
+  else if(M){try{const P=X4.plan(M,M.ctx||{l,u,sub:subKey,SUB,secs});if(P&&P.total)B.push({t:"kv",pairs:[["Lesson time","About "+P.total+" minutes"],["Big question",plain(M.hook.q)]]})}catch(e){B.push({t:"kv",pairs:[["Big question",plain(M.hook.q)]]})}}
+  if(l.sum)B.push({t:"p",text:plain(l.sum),italic:true});
+  /* key terms */
+  const kt=window.GL?GL.terms(l):[];
+  if(kt.length){B.push({t:"h",l:2,text:"Key terms"});B.push({t:"table",head:["Term","Meaning"],rows:kt.map(x=>[plain(x[0]),plain(x[1])]),widths:[32,68],fontSize:9.5,firstColBold:true})}
+  /* teacher: hook, connector and the chosen activity */
+  if(T&&M){
+    B.push({t:"h",l:2,text:"Starting the lesson"});
+    if(M.conn)B.push({t:"box",tone:"info",title:"Connector ("+M.conn.m+" min): "+plain(M.conn.from),text:plain(M.conn.q)+"  "+plain(String(M.conn.task).replace(/<br\s*\/?>/g," "))});
+    B.push({t:"box",tone:"info",title:"Hook question",text:plain(M.hook.q)});
+    if(M.hook.ans)B.push({t:"p",text:"Answer to look for: "+plain(M.hook.ans)});
+    if(act){B.push({t:"h",l:2,text:"Explore activity: "+plain(act.t)});
+      B.push({t:"kv",pairs:[["Time",act.m+" minutes"],["Materials",act.mat.map(plain).join("; ")]]});
+      if(act.safety)B.push({t:"box",tone:"warn",title:"Safety",text:plain(act.safety)});
+      B.push({t:"ol",items:act.st.map(plain)});
+      if(act.study)act.study.split(/\n+/).forEach(pp=>B.push({t:"box",tone:"info",text:plain(pp)}));
+      if(act.src)B.push({t:"p",text:"Source: "+plain(act.src),size:8,color:"666666"});
+      if(act.cards&&act.cards.length&&act.o&&act.o.pairs)B.push({t:"table",head:["Term","Meaning"],rows:act.cards.map(c=>[plain(c[0]),plain(c[1])]),widths:[35,65],fontSize:9});
+      else if(act.cards&&act.cards.length&&act.cats)B.push({t:"table",head:["Card","Goes in"],rows:act.cards.map(c=>[plain(c[0]),plain(c[1])]),widths:[60,40],fontSize:9});
+      if(act.ans&&act.ans.length){B.push({t:"h",l:3,text:"Answers"});B.push({t:"ol",items:act.ans.map(plain)})}}
+  }
+  /* the notes, part by part, with diagrams and pictures */
+  B.push({t:"h",l:2,text:"Notes"});
+  for(let i=0;i<secs.length;i++){const s=secs[i],pt=M&&M.parts[i];
+    B.push({t:"h",l:3,text:plain(s.title)+(s.ext?" (Extended)":"")});
+    if(T&&pt){B.push({t:"box",tone:"info",title:"Guiding question",text:plain(pt.q)});if(pt.txt)B.push({t:"p",text:"Task ("+pt.m+" min): "+plain(pt.txt),size:9.5,color:"444444"})}
+    const d=document.createElement("div"),fg=figsOf(s.body);d.innerHTML=F(fg.text);await nxBlocks(d,B);
+    for(const k of fg.f){if(!FIGS[k])continue;const h=document.createElement("div");h.innerHTML=FIGS[k]();await nxBlocks(h,B)}
+  }
+  /* pictures from the content folder (desktop app) */
+  if(DESK.on){try{const fs=(window.lotsDesktop.walk("Notes/"+SUB.code+"/"+l.no)||[]).filter(f=>!/\/Gallery\//i.test(f.rel)&&libKind(f.name)==="img").slice(0,12);
+    if(fs.length){B.push({t:"h",l:2,text:"Pictures"});let miss=0;
+      for(const f of fs){const z=await nxStdImg(window.lotsDesktop.url(f.rel));if(z)B.push({t:"img",dataUrl:z.dataUrl,w:z.w,h:z.h,widthPct:75,caption:f.name.replace(/\.[^.]+$/,"").replace(/^\d+[\s._-]+/,"")});else miss++}
+      if(miss)say("Note: "+miss+" picture(s) from the content folder could not be added.")}}catch(e){}}
+  /* summary and summary questions */
+  if(M&&M.sum&&M.sum.length){B.push({t:"h",l:2,text:"Summary"});B.push({t:"ul",items:M.sum.map(plain)})}
+  const Q=[],seen=new Set(),addQ=(q,a)=>{const k=plain(q).toLowerCase();if(!k||seen.has(k))return;seen.add(k);Q.push([q,a])};
+  if(M){M.parts.forEach((p,i)=>addQ(p.q,nxFirst(secs[i]&&secs[i].body,2)));let nc=0;M.parts.forEach(p=>p.chk.forEach(c=>{if(nc++<6)addQ(/[?.:]$/.test(plain(c[0]))||plain(c[0]).split(" ").length>6?c[0]:"What is meant by “"+plain(c[0])+"”?",c[1])}))}
+  else (l.cards||[]).forEach(c=>addQ(c[0],c[1]));
+  if(M)addQ(M.hook.q,M.hook.ans);
+  if(Q.length){B.push({t:"pb"});B.push({t:"h",l:2,text:"Summary questions"});
+    Q.forEach((q,i)=>{B.push({t:"q",label:String(i+1),text:plain(q[0])});if(T)B.push({t:"p",text:"Answer: "+plain(q[1]||"See the notes."),size:9.5,color:"0E5C4A",indent:340});else B.push({t:"lines",n:3})})}
+  const ver=T?"Teacher version":"Learner handout";
+  const model={title:"",meta:plain(l.t)+" | "+ver,footer:`${school?school+" | ":""}${SUB.title} | Lesson ${l.no} | ${ver}`,blocks:B};
+  const fn=("Notes - "+SUB.code+" "+l.no+" "+plain(l.t)+" - "+ver).replace(/[^\w .-]+/g,"").trim().slice(0,90);
+  const data=fmt==="docx"?await HUBDOC.docx(model):await HUBDOC.pdf(model);
+  return await saveFile(fn+"."+fmt,data);
+}
+function notesDialog(l,u,secs){
+  const SET=HUBSET.get(),school=(SET.teacher&&SET.teacher.school)||"",hasLogo=!!(SET.assess&&SET.assess.logo);
+  const ov=document.createElement("div");ov.className="x4ov";
+  ov.innerHTML=`<div class="x4dlg" role="dialog" aria-label="Export notes"><div class="x4dlg-h"><h2>Export notes: ${F(l.t)}</h2><button class="btn sm" type="button" data-close>Close</button></div>
+<p class="mute" style="margin-top:0">Both versions have the key terms, the notes with their diagrams and pictures, and summary questions at the end.</p>
+<div class="nxrow"><div><b>Learner handout</b><span class="mute">Space for name and class. Summary questions with lines to write on.</span></div><div class="row" style="gap:8px"><button class="btn pri" type="button" data-w="learner" data-f="pdf">PDF</button><button class="btn" type="button" data-w="learner" data-f="docx">Word</button></div></div>
+<div class="nxrow"><div><b>Teacher version</b><span class="mute">Adds the hook, guiding questions, tasks, the chosen Explore activity and all the answers.</span></div><div class="row" style="gap:8px"><button class="btn pri" type="button" data-w="teacher" data-f="pdf">PDF</button><button class="btn" type="button" data-w="teacher" data-f="docx">Word</button></div></div>
+<p class="mute">Header: <b>${school?F(school):"no school name yet"}</b> with ${hasLogo?"your school logo":"the built-in logo"}. Change these in Settings, under Teacher and Assessments.</p>
+<p class="mute" id="nx-m" role="status"></p></div>`;
+  document.body.appendChild(ov);
+  const close=()=>ov.remove();ov.querySelector("[data-close]").onclick=close;ov.addEventListener("click",e=>{if(e.target===ov)close()});ov.addEventListener("keydown",e=>{if(e.key==="Escape")close()});
+  const m=ov.querySelector("#nx-m"),say=t=>{m.textContent=t};
+  $$("[data-w]",ov).forEach(b=>b.onclick=async()=>{$$("[data-w]",ov).forEach(x=>x.disabled=true);say("Building the "+(b.dataset.w==="teacher"?"teacher version":"learner handout")+"…");
+    try{const r=await exportNotesT(l,u,secs,b.dataset.w,b.dataset.f,say);if(r==="saved")say((m.textContent.startsWith("Note:")?m.textContent+" ":"")+"Saved. Check your Downloads folder.");else if(r==="declined")say("");else say("Could not save the file.")}
+    catch(e){console.error(e);say("Sorry, the notes could not be built.")}
+    $$("[data-w]",ov).forEach(x=>x.disabled=false)});
+  setTimeout(()=>{const b=ov.querySelector("[data-w]");b&&b.focus()},30);
+}
+
 /* ---------- teacher: project an end-of-lesson summary and check on the board ---------- */
 function projEnd(l,u){
   const cards=(l.cards||[]).filter(c=>c&&c[0]&&c[1]).slice(0,5);
@@ -329,6 +419,7 @@ function projEnd(l,u){
 function viewLesson(key){
   const l=LS.find(x=>x.key===key);if(!l)return notFoundHome();
   if(curLesson!==key){lessonTab=(window.HUBSET&&HUBSET.get().lesson.start)||"engage";curLesson=key}
+  if(window.GL&&GL.pending(key))lessonTab="explain";
   if(lessonTab==="explore")lessonTab="explain";if(!STAGES.some(s=>s[0]===lessonTab))lessonTab="engage";{const hd=(window.HUBSET&&HUBSET.get().lesson.hide)||[];if(hd.includes(lessonTab))lessonTab=(STAGES.find(s=>!hd.includes(s[0]))||STAGES[0])[0]}
   S.last=key;save();
   S.crit=S.crit||{};
@@ -336,7 +427,7 @@ function viewLesson(key){
   const secs=splitNotes(l);
   const tag=`Lesson ${l.no} | ${F(l.t)}`;
   app.innerHTML=`<div style="--c:${u.col};--on:${u.on}">
-<section class="deck-hero">${typeof pracBanner==="function"?pracBanner(l,subKey):""}<div class="herotop"><span class="pill">Lesson ${l.idx+1} of ${nIn}</span><span class="row" style="gap:8px;flex-wrap:wrap"><button class="btn" id="expl" type="button">Export PowerPoint</button>${HUB.teacher?`<a class="btn" href="#plan" data-plan="${l.key}">Lesson plan</a>`:""}<button class="btn" id="done" type="button"></button></span></div>
+<section class="deck-hero">${typeof pracBanner==="function"?pracBanner(l,subKey):""}<div class="herotop"><span class="pill">Lesson ${l.idx+1} of ${nIn}</span><span class="row" style="gap:8px;flex-wrap:wrap"><button class="btn" id="expl" type="button">Export PowerPoint</button>${HUB.teacher?`<button class="btn" id="nxopen" type="button">Export notes</button><a class="btn" href="#plan" data-plan="${l.key}">Lesson plan</a>`:""}<button class="btn" id="done" type="button"></button></span></div>
 <div class="crumb2"><a href="#home">Topics</a> / <a href="#u${u.n}">Topic ${u.n}: ${F(u.name)}</a></div>
 <h1>${F(l.t)}</h1><p class="sub">${F(l.sum)}</p>
 <div class="meta2"><b>${SUB.title}</b> &nbsp;|&nbsp; Topic ${u.n}: ${F(u.name)}</div>${typeof sylBlock==="function"?sylBlock(l,subKey):""}
@@ -348,6 +439,7 @@ function viewLesson(key){
   function doneLabel(){db.textContent=S.done[key]?"Completed ✓":"Mark lesson as done";db.classList.toggle("pri",!!S.done[key])}
   doneLabel();
   $("#expl").addEventListener("click",e=>runExport(e.currentTarget,()=>exportLessonPPTX(l,u,SUB)));
+  {const nb=$("#nxopen");if(nb)nb.addEventListener("click",()=>notesDialog(l,u,secs))}
   const dpl=$("[data-plan]");if(dpl)dpl.addEventListener("click",()=>{planPick=l.key});
   db.addEventListener("click",()=>{S.done[key]=!S.done[key];save();doneLabel()});
   function go(t){lessonTab=t;$$(".stg").forEach(x=>x.setAttribute("aria-selected",String(x.dataset.t===t)));const dd=$("#x4dd");if(dd)dd.value=t;panel();const h=$("#x4hdr");if(h&&window.scrollY>h.offsetTop)window.scrollTo(0,h.offsetTop-8)}
@@ -365,6 +457,7 @@ function viewLesson(key){
       const coreC=mk(core.filter(s=>s.title!==l.t||secs.length===1),0,0).concat([["I can score at least 80% on the practice questions at the end of the lesson.",90]]);
       const extC=mk(ext,1,40).concat(ext.length?[]:[[SUB.keyIdea,41]]).concat([["I can answer exam-style questions on this topic and use the mark scheme to improve.",42]]);
       const cb=a=>a.map(c=>`<label><input type="checkbox" data-c="${c[1]}" ${S.crit[key+":"+c[1]]?"checked":""}><span>${c[0]}</span></label>`).join("");
+      {const kt=window.GL?GL.keyTermsHTML(l):"";if(kt)h+=slide("","Key terms","","Words to know in this lesson",`<div id="gl-ktbox">${kt}</div>`)}
       h+=slide("","Success criteria","","How we will know we have got there",`<div class="crit"><div class="critbox"><h3>Core: I can …</h3>${cb(coreC)}</div><div class="critbox x"><h3>Extended (Supplement): I can …</h3>${cb(extC)}</div></div>`,"Traffic-light yourself now, then again at the end of the lesson. Ticks are saved in this browser.");
       const b=l.ibl,st=parseSteps(b.task);
       h+=slide("ibl","IBL | Engage","red",F(b.q),`<div class="iblgrid"><div>${st.lead}${stepsHTML(st.items)}</div><div><div class="sidebox"><h5>Evidence to keep</h5><p>Write your thinking here before you read the notes. We return to it in the plenary.</p><textarea id="jr" aria-label="Your working" placeholder="Your working (saved in this browser)"></textarea></div></div></div>`,"Inquiry-based learning: ask, predict, test and explain before the teacher confirms.",`<span class="tag" style="margin-right:auto;margin-left:8px">Starter: wonder first</span>`);
@@ -382,7 +475,7 @@ function viewLesson(key){
       if(!HUB.teacher)h+=`<section class="slide notesx"><div class="sl-top"><span class="pill">Take it with you</span><span class="tag">${tag}</span></div><h2 class="sl-title">Download these notes</h2><p class="lead">Make a copy of this lesson’s notes to study offline or print. Your own name goes on the top.</p><div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn pri" type="button" data-nx="pdf">Download as PDF</button><button class="btn" type="button" data-nx="docx">Download as Word (.docx)</button><span class="meta" id="nxmsg" role="status"></span></div></section>`;
       xh=h;}
       const secHTML=s=>{const fg=figsOf(s.body),solo=fg.f.filter(k=>!FIGWIDE(k)),wide=fg.f.filter(k=>FIGWIDE(k));const html=F(fg.text),side=solo.map(k=>FIGS[k]?FIGS[k]():"").join(""),below=wide.map(k=>FIGS[k]?FIGS[k]():"").join("");return `<div class="sl-body ${side?"two":""}"><div class="notes">${html}</div>${side?`<div>${side}</div>`:""}</div>${below}`};
-      X4CTX={l,u,U,sub:subKey,SUB,secs,prev,nxt,F,secHTML,extra:xh?`<div class="x4extra">${xh}</div>`:"",projEnd:()=>projEnd(l,u),after:el=>{wrapTables(el)}};
+      X4CTX={l,u,U,sub:subKey,SUB,secs,prev,nxt,F,secHTML,extra:xh?`<div class="x4extra">${xh}</div>`:"",projEnd:()=>projEnd(l,u),after:el=>{wrapTables(el);if(window.GL)GL.wrap(el.querySelector(".x4notes"),subKey,l.key)}};
       h+=X4.render(X4CTX);
       h+=nextBtn("explain");
     }else if(lessonTab==="practise"){
@@ -412,7 +505,7 @@ function viewLesson(key){
     $$("[data-endproj]",p).forEach(b=>b.addEventListener("click",()=>projEnd(l,u)));
     $$("[data-nx]",p).forEach(b=>b.addEventListener("click",()=>exportNotes(l,u,secs,b.dataset.nx,b)));
     $$("[data-go]",p).forEach(b=>b.addEventListener("click",()=>go(b.dataset.go)));
-    $$("input[data-c]",p).forEach(c=>c.addEventListener("change",()=>{S.crit[key+":"+c.dataset.c]=c.checked;save()}));
+    $$("input[data-c]",p).forEach(c=>c.addEventListener("change",()=>{S.crit[key+":"+c.dataset.c]=c.checked;save()}));if(window.GL)GL.bindKeyTerms($("#gl-ktbox",p));
     const gaP=$("#ga-print");if(gaP)gaP.onclick=()=>{const w=window.open("","_blank");if(!w){alert("Allow pop-ups to print.");return}w.document.write("<!doctype html><meta charset=utf-8><title>Group sheet</title><style>body{font:14px Arial;margin:24px}li{margin:4px 0}</style>"+window.__GA);w.document.close();w.print()};
     const jr=$("#jr");if(jr){jr.value=S.ibl[key]||"";let t;jr.addEventListener("input",()=>{clearTimeout(t);t=setTimeout(()=>{S.ibl[key]=jr.value;save()},400)})}
     if($("#prm"))mountPractice($("#prm"),l.pr);

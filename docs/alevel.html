@@ -770,6 +770,25 @@ html{overflow-anchor:none}
 body:has(.x4hdr) header.top{position:static}
 .x4rev:not(.open){max-height:360px}
 .tmr.x4c.x4mini .x4cbtn button+button{display:none}
+/* glossary words, pop-up and key terms */
+.gl-w{all:unset;cursor:pointer;border-bottom:2px dotted var(--x4t);color:inherit;font:inherit}
+.gl-w:hover,.gl-w:focus-visible{background:var(--x4ts);outline:none;border-bottom-style:solid}
+.gl-pop{position:fixed;z-index:950;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px #0004;padding:12px 14px;font-size:15px}
+.gl-pop p{margin:6px 0 10px}
+.gl-h{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.gl-h b{font-size:17px;color:var(--x4t)}
+.gl-x{border:0;background:none;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 6px}
+.gl-f{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.gl-kt{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.gl-k{border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden}
+.gl-t{display:block;width:100%;text-align:left;border:0;background:none;color:var(--ink);font:600 calc(16*var(--u)) var(--f-body);padding:10px 12px;cursor:pointer}
+.gl-t::after{content:" ▸";color:var(--muted)}.gl-t.on{color:var(--x4t)}.gl-t.on::after{content:" ▾"}
+.gl-k p{margin:0;padding:0 12px 10px;font-size:calc(14*var(--u));color:var(--ink)}
+.gl-gt{border:0;background:none;padding:0;font:inherit;font-weight:700;color:var(--x4t);cursor:pointer;text-align:left}
+.gl-gt:hover{text-decoration:underline}
+.gl-flash,.gl-mark{background:#ffe56a!important;color:#111!important;border-radius:4px;transition:background 1s}
+.gl-m{font:13px/1.35 var(--f-body,inherit);color:var(--muted);flex:1 1 140px}
+.nxrow{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0;background:var(--surface)}.nxrow>div:first-child{display:flex;flex-direction:column;gap:2px;flex:1 1 260px}
 </style>
 <script>if(location.protocol==="file:")document.write('<script src="content.js"><\/script>')</script>
 <div class="page">
@@ -7851,6 +7870,17 @@ async function buildLesson(pres,l,u,SUB,opts){
     }
   }
 
+  /* ---- Engage: key terms (meanings appear on click, one at a time) ---- */
+  if(window.GL){const kt=GL.terms(l);if(kt.length){
+    const n=kt.length,cols=n>8?3:2,rows=Math.ceil(n/cols),gap=0.18,cw=(CW-gap*(cols-1))/cols,ch=Math.min(1.45,(CB-CY-0.05-gap*(rows-1))/rows);
+    const s=frame(pres,cx,{theme:"std",pill:"Engage | Key terms",title:"Words to know in this lesson",foot:"Say what each word means before you click to check.",notes:"Ask learners to explain each word in their own words first. Each click shows the next meaning."});
+    let fs=18;const fit=f=>kt.every(t=>lineCount(plain(t[1]),cw-0.3,f,false)*f*LH/72<=ch-0.62);while(fs>10&&!fit(fs))fs--;
+    kt.forEach((t,i)=>{const c=i%cols,r=Math.floor(i/cols),x=MX+c*(cw+gap),y=CY+r*(ch+gap);
+      s.addShape("roundRect",{x,y,w:cw,h:ch,fill:{color:C.WHITE},line:{color:C.MINTLINE,width:1},rectRadius:0.08});
+      s.addText(toRuns(runsOf(t[0],{}),{fontFace:HF,fontSize:17,bold:true,color:C.ACC}),{x:x+0.15,y:y+0.08,w:cw-0.3,h:0.42,valign:"middle",margin:0});
+      rv(s,i+1);s.addText(toRuns(runsOf(t[1],{}),{fontFace:BF,fontSize:fs,color:C.INK}),{x:x+0.15,y:y+0.52,w:cw-0.3,h:ch-0.6,valign:"top",margin:0});rv(s,0)});
+  }}
+
   /* ---- Engage: success criteria ---- */
   {
     const mk=(arr)=>arr.map(sc=>`I can explain and use the ideas in “${plain(sc.title)}”.`);
@@ -10448,7 +10478,7 @@ async function toPdf(model){
   obj(1,()=>ps("<< /Type /Catalog /Pages 2 0 R >>"));
   obj(2,()=>ps("<< /Type /Pages /Count "+N+" /Kids ["+pages.map((_,i)=>(pgBase+i*2+1)+" 0 R").join(" ")+"] >>"));
   ["Helvetica","Helvetica-Bold","Helvetica-Oblique","Helvetica-BoldOblique"].forEach((n,k)=>obj(fontIds[k],()=>ps("<< /Type /Font /Subtype /Type1 /BaseFont /"+n+" /Encoding /WinAnsiEncoding >>")));
-  obj(infoId,()=>ps("<< /Title "+pdfLit(model.title||"Document")+" /Producer (Cambridge Learning Hub) >>"));
+  obj(infoId,()=>ps("<< /Title "+pdfLit(model.meta||model.title||"Document")+" /Producer (Cambridge Learning Hub) >>"));
   images.forEach((j,k)=>obj(imgBase+k,()=>{ps("<< /Type /XObject /Subtype /Image /Width "+j.pw+" /Height "+j.ph+" /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /"+(j.flate?"FlateDecode":"DCTDecode")+" /Length "+j.bytes.length+" >>\nstream\n");put(j.bytes);ps("\nendstream")}));
   for(let i=0;i<N;i++){
     const raw=enc.encode(pages[i].ops.join("\n")),z=await deflate(raw),data=z||raw;
@@ -13000,6 +13030,7 @@ const a=document.getElementById("app"),T=HUB.teacher;
 const S=(h,b)=>`<section class="card" style="margin:14px 0;padding:18px 22px"><h2 style="margin:0 0 8px">${h}</h2>${b}</section>`;
 a.innerHTML=`<div class="crumb"><a href="#">Home</a> / Help</div><h1 class="ltitle">Help</h1><p class="lsum">A quick guide to using the LOTS Cambridge Learning Hub in class.</p>
 ${S("Teaching a lesson",`<ol><li>Open <b>Topics</b>, choose a subject, then a topic and a lesson.</li><li>Each lesson follows five stages: <b>Engage, Explore &amp; Explain, Practise, Play, Reflect</b>. Use the stage buttons at the top to move between them.</li><li><b>Explain</b> holds the notes and diagrams, shown in parts so they are readable on the smart board. Use <b>Project</b> on a slide to show it full screen.</li><li>Use <b>Projector</b> and <b>Display</b> in the top bar to enlarge text and change the look for the classroom.</li><li>Use the two-part <b>clock</b> to time the lesson and each activity.</li></ol>`)}
+${S("Key terms, glossary words and notes export (4.2)",`<ul><li><b>Key terms</b> appear in Engage, just before the success criteria. Learners say what each word means, then tap it to check. The exported PowerPoint has a matching slide where each meaning appears on a click.</li><li>In the notes, key words have a dotted underline. Tap one to see its meaning and the lesson it comes from. <b>Go to the notes</b> opens that lesson at the right part of Explain and highlights the word.</li><li>In <b>Study tools, Glossary</b>, tap any term for the same card.</li>${T?`<li><b>Export notes</b> (next to Export PowerPoint) makes a <b>Learner handout</b> or a <b>Teacher version</b> as PDF or Word. Both have the key terms, the notes with their diagrams and pictures, and summary questions at the end. The teacher version adds the hook, guiding questions, tasks, the chosen Explore activity and the answers. The school name and logo on the top come from <b>Settings</b> (Teacher, and Assessments: School logo).</li>`:`<li>The <b>Download these notes</b> buttons at the end of Explain now include the diagrams and pictures.</li>`}</ul>`)}
 ${S("The Explore and Explain stage (4.0)",`<ul>${T?`<li>The slim bar at the top shows the stages and the sections of this stage with their minutes: <b>Topic hook</b> (first lesson of a topic), <b>Connector</b>, <b>Hook</b>, <b>Explore</b>, <b>Explain</b> and <b>Summary</b>. <b>Lesson options ⋯</b> sets a single (40) or double (80) period and shows or hides the topic hook. Every time is editable.</li><li><b>Hook</b>: tap to reveal the picture, then ask the big question and type the class’s first ideas. They come back in the Summary. To use your own photo, put a file called <b>Hook.jpg</b> (or .png) in the lesson’s notes folder, for example <b>Notes/0610/3.2</b>; for a topic hook use <b>Notes/0610/Topic 3/Hook.jpg</b>.</li><li><b>Explore</b>: the hub chooses an activity; tap a chip to swap. <b>Start activity</b> starts the activity timer. <b>Print pack</b> makes PDF or Word packs for the class you choose (cards with set letters, role cards, task sheets and an answer key).</li><li><b>Explain</b>: each part has a guiding question and a short task whose timer starts when the part opens. The notes stay covered until <b>Show the explanation</b>. The <b>question ladder</b> on the right (a progress bar on tablets and phones) ticks off as you go.</li><li>The <b>clock</b> has two parts: the lesson (teal) counts down to the end of the period from your timetable, and the activity (amber). Drag it with ⠿, shrink it with –, or tap it for more controls.</li><li><b>End lesson and check learners</b> (Teaching Mode) shows the colour key. <b>Project</b> puts the names on the board so learners tap their name, then a colour; your list updates at the same time.</li>`:`<li>Each lesson starts with a <b>lesson connector</b> that links to the last lesson.</li><li><b>Explore</b> gives an activity you can do on your own.</li><li><b>Explain</b> is in parts. Read the guiding question, try the task, then tap <b>Show the explanation</b> and answer the quick check.</li>`}<li>The <b>✎</b> button on the left opens the annotate bar: pens, highlighter, eraser, sizes, a see-through or white layer, undo, clear and 💾 to save a picture.</li></ul>`)}
 ${S("What each tab does",`<ul><li><b>Topics</b> – all lessons by topic.</li><li><b>Flashcards</b> and <b>Exam questions</b> – revision and past-paper style questions.</li>${T?`<li><b>Lesson plans</b> – build a plan for any lesson (single 40 min or double 80 min period) and export it.</li><li><b>Assessments</b> – build bi-weekly tests, formative and summative papers with a marking scheme.</li><li><b>Overviews</b> – plan the semester week by week: pick a topic, its syllabus objectives are added, tick what was covered, and unticked objectives move to the next week with their topic and sub-topic.</li><li><b>Study packs</b> – printable revision packs.</li><li><b>Learner progress</b> – class progress and reports.</li>`:""}<li><b>Practicals</b>, <b>Games</b> and <b>Jokes</b> – hands-on work and a lighter break.</li></ul>`)}
 ${S("Saving your work",`<p>Your progress is saved on this computer. Open <b>Settings</b> and use <b>Back up</b> regularly to save a copy (for example to a flash disk). <b>Restore</b> brings it back on another computer. You can also choose a folder where files such as plans and reports are saved.</p>`)}
@@ -13224,7 +13255,11 @@ function bind(p){
   fillHdr();
   const showPart=(i,auto)=>{CUR.part=i;S.part=i;sv(S);const pb=p.querySelector("#x4pb");pb.innerHTML=partHTML();ctx.after&&ctx.after(pb);ladder(p);if(auto&&T)startTask();reproj("x4-explain")};
   const startTask=()=>{const pt=M.parts[CUR.part];if(window.HUBTIMER)HUBTIMER.task(pt.m*60,"Part "+(CUR.part+1)+": "+(TK[pt.tk]||"Task"))};
-  showPart(CUR.part,false);
+  {const g=window.GL&&GL.pending(ctx.l.key);
+    if(g){GL.clearPending();const pi=Math.max(0,Math.min(M.parts.length-1,+g.part||0));CUR.done.add(pi);S.done=[...CUR.done];showPart(pi,false);
+      const n=p.querySelector("#x4notes");if(n)n.classList.add("open");ladder(p);
+      setTimeout(()=>{const ex=p.querySelector("#x4-explain");if(ex)ex.scrollIntoView({block:"start"});setTimeout(()=>GL.flash(p.querySelector("#x4notes"),g.term),350)},120)}
+    else showPart(CUR.part,false)}
   const echo=()=>{const b=p.querySelector("#x4back"),t=p.querySelector("#x4ideas");if(b)b.textContent=(t&&t.value)||"(nothing written yet)"};echo();
   p.addEventListener("input",e=>{
     const t=e.target;
@@ -13294,6 +13329,95 @@ return {add,topic,render,bind,leave,C,TH,model,plan,get cur(){return CUR},strip,
 })();
 function X4ADD(s,o){X4.add(s,o)}
 function X4TOPIC(s,o){X4.topic(s,o)}
+
+/* ===== Glossary links (all hubs): clickable key words in the notes and the Glossary, the Key terms box, jump to the notes ===== */
+const GL=(function(){
+"use strict";
+const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const F=s=>String(s==null?"":s).replace(/~([^~<>]+)~/g,"<sub>$1</sub>").replace(/\^([^\^<>]+)\^/g,"<sup>$1</sup>");
+const plain=h=>{const d=document.createElement("div");d.innerHTML=F(h);return d.textContent.replace(/\s+/g," ").trim()};
+const IDX={};
+function secsOf(l){const parts=String(l.notes||"").split(/<h4>/),o=[];if(parts[0].trim())o.push(parts[0]);parts.slice(1).forEach(p=>o.push(p));return o.map(plain)}
+/* one entry per term: meaning, home lesson and the part of the notes where it is explained */
+function index(sub){
+  if(IDX[sub])return IDX[sub];
+  const map=new Map();
+  try{(SUBJ[sub].units||[]).forEach(u=>u.lessons.forEach((l,j)=>{
+    const key=l.key||(u.n+"-"+(j+1)),no=l.no||(u.n+"."+(j+1));let secs=null;
+    const add=(t,d)=>{const tp=plain(t);if(!tp||tp.length<3||tp.length>40||/[?]/.test(tp))return;const k=tp.toLowerCase();if(map.has(k))return;
+      secs=secs||secsOf(l);let part=0;const re=new RegExp("\\b"+tp.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b","i");const i=secs.findIndex(s=>re.test(s));if(i>=0)part=i;
+      map.set(k,{t:tp,html:t,d,key,no,lt:plain(l.t),u:u.n,part})};
+    (l.pairs||[]).forEach(p=>add(p[0],p[1]));
+    (l.words||[]).forEach(w=>add(w[0].charAt(0).toUpperCase()+w[0].slice(1),w[1]));
+  }))}catch(e){}
+  const list=[...map.values()].sort((a,b)=>b.t.length-a.t.length);
+  return(IDX[sub]={map,list});
+}
+function find(sub,term){return index(sub).map.get(String(term).toLowerCase())||null}
+/* jump to the notes: open the lesson in Explore & Explain at the right part */
+function goNotes(sub,e){try{sessionStorage.setItem("x4goto",JSON.stringify({key:e.key,part:e.part,term:e.t}))}catch(x){}
+  const h="#"+sub+"/l"+e.key;if(location.hash===h){window.dispatchEvent(new HashChangeEvent("hashchange"))}else location.hash=h}
+/* pop-up card next to a word */
+const STOP=new Set("water,energy,cell,cells,heat,light,food,blood,air,gas,gases,liquid,solid,mass,volume,rate,temperature,time,size,area,force,salt,sugar,plant,plants,animal,animals,organism,organisms,energy transfer,heart,leaf,leaves,root,roots,soil,carbon".split(","));
+let pop=null;
+function close(){if(pop){pop.remove();pop=null}}
+function card(anchor,sub,e,curKey,onGo){
+  close();pop=document.createElement("div");pop.className="gl-pop";pop.setAttribute("role","dialog");pop.setAttribute("aria-label","Meaning of "+e.t);
+  const same=curKey&&curKey===e.key;
+  pop.innerHTML=`<div class="gl-h"><b>${F(esc(e.t))}</b><button type="button" class="gl-x" aria-label="Close">✕</button></div><p>${F(e.d)}</p><div class="gl-f"><span class="gl-m">Lesson ${esc(e.no)}: ${esc(e.lt)}</span><button type="button" class="btn sm pri gl-go">${same?"Show it in these notes":"Go to the notes"}</button></div>`;
+  document.body.appendChild(pop);
+  const r=anchor.getBoundingClientRect(),pw=Math.min(360,innerWidth-24);pop.style.width=pw+"px";
+  let x=Math.min(innerWidth-pw-12,Math.max(12,r.left+r.width/2-pw/2)),y=r.bottom+8;
+  if(y+pop.offsetHeight>innerHeight-10)y=Math.max(10,r.top-pop.offsetHeight-8);
+  pop.style.left=x+"px";pop.style.top=y+"px";
+  pop.querySelector(".gl-x").onclick=close;
+  pop.querySelector(".gl-go").onclick=()=>{close();if(onGo)onGo();goNotes(sub,e)};
+  setTimeout(()=>pop&&pop.querySelector(".gl-go").focus(),20);
+}
+document.addEventListener("click",ev=>{if(pop&&!pop.contains(ev.target)&&!ev.target.closest(".gl-w,.gl-t,.gl-gt"))close()});
+document.addEventListener("keydown",ev=>{if(ev.key==="Escape")close()});
+addEventListener("hashchange",close);
+/* underline the first use of each glossary word inside an element */
+function wrap(root,sub,curKey){
+  if(!root||root.dataset.glDone)return;root.dataset.glDone="1";
+  const IX=index(sub);if(!IX.list.length)return;
+  const own=new Map();if(curKey){IX.list.forEach(e=>{if(e.key===curKey)own.set(e.t.toLowerCase(),e)})}
+  const list=IX.list.filter(e=>!STOP.has(e.t.toLowerCase())||own.has(e.t.toLowerCase()));
+  const seen=new Set();
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>{const p=n.parentElement;if(!p||!n.nodeValue.trim())return NodeFilter.FILTER_REJECT;if(p.closest("button,a,svg,figure,figcaption,h2,h3,.x4cover,.gl-w,script,style,table th,.sl-top"))return NodeFilter.FILTER_REJECT;return NodeFilter.FILTER_ACCEPT}});
+  const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
+  let made=0;
+  for(const n of nodes){
+    if(made>=40)break;
+    let txt=n.nodeValue,low=txt.toLowerCase(),hit=null;
+    for(const e of list){const k=e.t.toLowerCase();if(seen.has(k))continue;const i=low.indexOf(k);if(i<0)continue;
+      const b=i?low[i-1]:" ",a=low[i+k.length]||" ";if(/[a-z0-9]/.test(b)||/[a-z0-9]/.test(a))continue;if(!hit||i<hit.i)hit={i,e,k}}
+    if(!hit)continue;
+    seen.add(hit.k);made++;
+    const before=txt.slice(0,hit.i),word=txt.slice(hit.i,hit.i+hit.k.length),after=txt.slice(hit.i+hit.k.length);
+    const btn=document.createElement("button");btn.type="button";btn.className="gl-w";btn.textContent=word;btn.dataset.gl=hit.k;btn.title="Tap for the meaning";
+    const frag=document.createDocumentFragment();if(before)frag.appendChild(document.createTextNode(before));frag.appendChild(btn);
+    const rest=document.createTextNode(after);frag.appendChild(rest);n.parentNode.replaceChild(frag,n);
+    if(after.trim())nodes.splice(nodes.indexOf(n)+1,0,rest);
+  }
+  root.addEventListener("click",ev=>{const b=ev.target.closest(".gl-w");if(!b)return;ev.preventDefault();ev.stopPropagation();const e=own.get(b.dataset.gl)||find(sub,b.dataset.gl);if(e)card(b,sub,e,curKey)});
+}
+/* Key terms box: words first, tap to show the meaning */
+function terms(l){const out=[],seen=new Set();(l.pairs||[]).forEach(p=>{const t=plain(p[0]);if(t&&!seen.has(t.toLowerCase())&&!/[?]/.test(t)){seen.add(t.toLowerCase());out.push([p[0],p[1]])}});
+  (l.words||[]).forEach(w=>{const t=w[0].charAt(0).toUpperCase()+w[0].slice(1);if(!seen.has(t.toLowerCase())){seen.add(t.toLowerCase());out.push([t,w[1]])}});return out.slice(0,12)}
+function keyTermsHTML(l){const t=terms(l);if(!t.length)return "";
+  return `<div class="gl-kt">${t.map((x,i)=>`<div class="gl-k"><button type="button" class="gl-t" aria-expanded="false" data-kt="${i}">${F(x[0])}</button><p hidden>${F(x[1])}</p></div>`).join("")}</div><div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap"><button type="button" class="btn sm" data-ktall>Show all meanings</button><span class="meta">Say what each word means, then tap it to check.</span></div>`}
+function bindKeyTerms(root){if(!root)return;root.addEventListener("click",ev=>{const b=ev.target.closest(".gl-t");if(b){const p=b.nextElementSibling;p.hidden=!p.hidden;b.setAttribute("aria-expanded",String(!p.hidden));b.classList.toggle("on",!p.hidden);return}
+  const a=ev.target.closest("[data-ktall]");if(a){const ps=[...root.querySelectorAll(".gl-k p")],show=ps.some(p=>p.hidden);ps.forEach(p=>p.hidden=!show);root.querySelectorAll(".gl-t").forEach(x=>{x.setAttribute("aria-expanded",String(show));x.classList.toggle("on",show)});a.textContent=show?"Hide all meanings":"Show all meanings"}})}
+/* the lesson asked for by "Go to the notes" */
+function pending(key){try{const g=JSON.parse(sessionStorage.getItem("x4goto")||"null");if(g&&g.key===key)return g}catch(e){}return null}
+function clearPending(){try{sessionStorage.removeItem("x4goto")}catch(e){}}
+function flash(root,term){if(!root||!term)return;const k=String(term).toLowerCase();let el=[...root.querySelectorAll(".gl-w")].find(b=>b.dataset.gl===k);
+  if(!el){const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);while(w.nextNode()){const n=w.currentNode,i=n.nodeValue.toLowerCase().indexOf(k);if(i>=0){const m=document.createElement("mark");m.className="gl-mark";const r=document.createRange();r.setStart(n,i);r.setEnd(n,i+k.length);try{r.surroundContents(m);el=m}catch(e){}break}}}
+  if(el){el.classList.add("gl-flash");setTimeout(()=>el.scrollIntoView({block:"center",behavior:"smooth"}),150);setTimeout(()=>el.classList.remove("gl-flash"),4000)}}
+return{index,find,card,wrap,keyTermsHTML,bindKeyTerms,terms,pending,clearPending,flash,goNotes,close};
+})();
+window.GL=GL;
 
 /* 4.0 content: AS and A Level Biology 9700, Topics 1 and 2 */
 X4TOPIC("alevel",{
@@ -14345,6 +14469,12 @@ function nxInline(n){
   });
   return o;
 }
+/* pictures for Word and PDF: always PNG or JPEG (WebP and others are redrawn), at most 1400 px */
+function nxStdImg(src){return new Promise(r=>{if(!src)return r(null);const i=new Image();i.onload=()=>{const w=i.naturalWidth,h=i.naturalHeight;if(!w||!h)return r(null);const m=Math.min(1,1400/Math.max(w,h));
+  if(/^data:image\/(png|jpe?g);/i.test(src)&&m===1)return r({dataUrl:src,w,h});
+  try{const c=document.createElement("canvas");c.width=Math.max(1,Math.round(w*m));c.height=Math.max(1,Math.round(h*m));const g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,c.width,c.height);g.drawImage(i,0,0,c.width,c.height);
+    const png=/^data:image\/(png|svg|gif)/i.test(src)||/\.(png|svg|gif)$/i.test(src);r({dataUrl:c.toDataURL(png?"image/png":"image/jpeg",0.9),w:c.width,h:c.height})}catch(e){r(null)}};i.onerror=()=>r(null);i.src=src})}
+const nxInlineOnly=el=>[...el.childNodes].every(n=>n.nodeType===3||n.nodeType===8||(n.nodeType===1&&/^(B|I|EM|STRONG|SUB|SUP|SPAN|A|BR|SMALL|U|MARK|CODE|ABBR)$/.test(n.tagName)));
 function nxImgSize(src){return new Promise(r=>{const i=new Image();i.onload=()=>r({w:i.naturalWidth,h:i.naturalHeight});i.onerror=()=>r(null);i.src=src})}
 async function nxBlocks(root,out){
   for(const el of [...root.children]){
@@ -14355,7 +14485,10 @@ async function nxBlocks(root,out){
     else if(t==="TABLE"){const rows=[...el.querySelectorAll("tr")].map(r=>[...r.children].map(c=>nxInline(c).trim()));if(rows.length){const hd=el.querySelector("th")?rows.shift():null;out.push({t:"table",head:hd,rows,fontSize:9})}}
     else if(t==="svg"||t==="SVG"||el.querySelector&&el.querySelector(":scope > svg")&&!el.textContent.trim()){
       try{const r=await HUBDOC.svgToPng(t.toLowerCase()==="svg"?el:el.querySelector("svg"),600);out.push({t:"img",dataUrl:r.dataUrl,w:r.w,h:r.h,widthPct:Math.min(100,Math.round(r.w/6.2))})}catch(e){}}
-    else if(t==="IMG"&&/^data:/.test(el.getAttribute("src")||"")){const d=el.getAttribute("src"),z=await nxImgSize(d);if(z)out.push({t:"img",dataUrl:d,w:z.w,h:z.h,widthPct:Math.min(100,Math.round(z.w/6.2)),caption:el.getAttribute("alt")||""})}
+    else if(t==="IMG"&&el.getAttribute("src")){const z=await nxStdImg(el.getAttribute("src"));if(z)out.push({t:"img",dataUrl:z.dataUrl,w:z.w,h:z.h,widthPct:Math.min(85,Math.max(30,Math.round(z.w/6.2))),caption:el.getAttribute("alt")||""})}
+    else if(t==="FIGURE"&&el.querySelector("img")&&!el.querySelector("svg")){const im=el.querySelector("img"),cap=el.querySelector("figcaption"),z=await nxStdImg(im.getAttribute("src")||"");if(z)out.push({t:"img",dataUrl:z.dataUrl,w:z.w,h:z.h,widthPct:Math.min(85,Math.max(30,Math.round(z.w/6.2))),caption:cap?nxInline(cap).trim():(im.getAttribute("alt")||"")})}
+    else if((t==="DIV"||t==="ASIDE"||t==="SECTION")&&nxInlineOnly(el)&&el.textContent.trim()){const fb=el.firstChild&&el.firstChild.nodeType===1&&/^(B|STRONG)$/.test(el.firstChild.tagName)?el.firstChild:null,c=el.cloneNode(true);if(fb)c.removeChild(c.firstChild);const tx=nxInline(c).trim(),title=fb?fb.textContent.trim():"";
+      if(fb||/key|tip|note|warn|box|rem/.test(el.className||""))out.push({t:"box",tone:/warn|safe/.test(el.className||"")?"warn":"info",title,text:tx});else if(tx)out.push({t:"p",text:tx})}
     else if(el.children.length)await nxBlocks(el,out);
     else{const x=nxInline(el).trim();if(x)out.push({t:"p",text:x})}
   }
@@ -14388,6 +14521,87 @@ async function exportNotes(l,u,secs,fmt,btn){
   btn.disabled=false;
 }
 
+/* ---------- Master hub: notes export (learner handout or teacher version) with the school name and logo from Settings ---------- */
+const nxFirst=(html,n)=>{const d=document.createElement("div");d.innerHTML=F(String(html||"").replace(/\{\{\w+\}\}/g,""));const ps=[...d.querySelectorAll("p")].map(p=>p.textContent).join(" ")||d.textContent;const t=ps.replace(/\s+/g," ").trim();const ss=t.match(/[^.?!]+[.?!]+/g)||[t];return ss.slice(0,n||2).join(" ").trim().slice(0,400)};
+async function exportNotesT(l,u,secs,who,fmt,say){
+  const T=who==="teacher",SET=HUBSET.get(),school=(SET.teacher&&SET.teacher.school||"").trim();
+  const logoSrc=(SET.assess&&SET.assess.logo)||(typeof ASSESS_LOGO!=="undefined"?ASSESS_LOGO:"");
+  let M=null;try{const i=LS.indexOf(l);const ctx={l,u,U:SUBJ[subKey].units,sub:subKey,SUB,secs,prev:i>0?LS[i-1]:null,F};M=X4.model(ctx)}catch(e){console.warn(e)}
+  const act=M?(M.acts.find((x,j)=>String(j)===String(M.S.act))||M.acts[0]||null):null;
+  const B=[];
+  /* header: logo, school, subject */
+  if(logoSrc){const z=await nxStdImg(logoSrc);if(z)B.push({t:"img",dataUrl:z.dataUrl,w:z.w,h:z.h,widthPct:Math.round(Math.min(16,16*z.w/z.h))})}
+  if(school)B.push({t:"p",text:school,bold:true,size:15,align:"center",after:20});
+  B.push({t:"p",text:`${SUB.title}  |  Topic ${u.n}: ${plain(u.name)}`,size:10,color:"555555",align:"center"});
+  B.push({t:"band",text:`Lesson ${l.no}: ${plain(l.t)}${T?"  ·  Teacher version":""}`});
+  if(!T)B.push({t:"p",text:"Name: ________________________________   Class: ____________   Date: ____________",size:10});
+  else if(M){try{const P=X4.plan(M,M.ctx||{l,u,sub:subKey,SUB,secs});if(P&&P.total)B.push({t:"kv",pairs:[["Lesson time","About "+P.total+" minutes"],["Big question",plain(M.hook.q)]]})}catch(e){B.push({t:"kv",pairs:[["Big question",plain(M.hook.q)]]})}}
+  if(l.sum)B.push({t:"p",text:plain(l.sum),italic:true});
+  /* key terms */
+  const kt=window.GL?GL.terms(l):[];
+  if(kt.length){B.push({t:"h",l:2,text:"Key terms"});B.push({t:"table",head:["Term","Meaning"],rows:kt.map(x=>[plain(x[0]),plain(x[1])]),widths:[32,68],fontSize:9.5,firstColBold:true})}
+  /* teacher: hook, connector and the chosen activity */
+  if(T&&M){
+    B.push({t:"h",l:2,text:"Starting the lesson"});
+    if(M.conn)B.push({t:"box",tone:"info",title:"Connector ("+M.conn.m+" min): "+plain(M.conn.from),text:plain(M.conn.q)+"  "+plain(String(M.conn.task).replace(/<br\s*\/?>/g," "))});
+    B.push({t:"box",tone:"info",title:"Hook question",text:plain(M.hook.q)});
+    if(M.hook.ans)B.push({t:"p",text:"Answer to look for: "+plain(M.hook.ans)});
+    if(act){B.push({t:"h",l:2,text:"Explore activity: "+plain(act.t)});
+      B.push({t:"kv",pairs:[["Time",act.m+" minutes"],["Materials",act.mat.map(plain).join("; ")]]});
+      if(act.safety)B.push({t:"box",tone:"warn",title:"Safety",text:plain(act.safety)});
+      B.push({t:"ol",items:act.st.map(plain)});
+      if(act.study)act.study.split(/\n+/).forEach(pp=>B.push({t:"box",tone:"info",text:plain(pp)}));
+      if(act.src)B.push({t:"p",text:"Source: "+plain(act.src),size:8,color:"666666"});
+      if(act.cards&&act.cards.length&&act.o&&act.o.pairs)B.push({t:"table",head:["Term","Meaning"],rows:act.cards.map(c=>[plain(c[0]),plain(c[1])]),widths:[35,65],fontSize:9});
+      else if(act.cards&&act.cards.length&&act.cats)B.push({t:"table",head:["Card","Goes in"],rows:act.cards.map(c=>[plain(c[0]),plain(c[1])]),widths:[60,40],fontSize:9});
+      if(act.ans&&act.ans.length){B.push({t:"h",l:3,text:"Answers"});B.push({t:"ol",items:act.ans.map(plain)})}}
+  }
+  /* the notes, part by part, with diagrams and pictures */
+  B.push({t:"h",l:2,text:"Notes"});
+  for(let i=0;i<secs.length;i++){const s=secs[i],pt=M&&M.parts[i];
+    B.push({t:"h",l:3,text:plain(s.title)+(s.ext?" (Extended)":"")});
+    if(T&&pt){B.push({t:"box",tone:"info",title:"Guiding question",text:plain(pt.q)});if(pt.txt)B.push({t:"p",text:"Task ("+pt.m+" min): "+plain(pt.txt),size:9.5,color:"444444"})}
+    const d=document.createElement("div"),fg=figsOf(s.body);d.innerHTML=F(fg.text);await nxBlocks(d,B);
+    for(const k of fg.f){if(!FIGS[k])continue;const h=document.createElement("div");h.innerHTML=FIGS[k]();await nxBlocks(h,B)}
+  }
+  /* pictures from the content folder (desktop app) */
+  if(DESK.on){try{const fs=(window.lotsDesktop.walk("Notes/"+SUB.code+"/"+l.no)||[]).filter(f=>!/\/Gallery\//i.test(f.rel)&&libKind(f.name)==="img").slice(0,12);
+    if(fs.length){B.push({t:"h",l:2,text:"Pictures"});let miss=0;
+      for(const f of fs){const z=await nxStdImg(window.lotsDesktop.url(f.rel));if(z)B.push({t:"img",dataUrl:z.dataUrl,w:z.w,h:z.h,widthPct:75,caption:f.name.replace(/\.[^.]+$/,"").replace(/^\d+[\s._-]+/,"")});else miss++}
+      if(miss)say("Note: "+miss+" picture(s) from the content folder could not be added.")}}catch(e){}}
+  /* summary and summary questions */
+  if(M&&M.sum&&M.sum.length){B.push({t:"h",l:2,text:"Summary"});B.push({t:"ul",items:M.sum.map(plain)})}
+  const Q=[],seen=new Set(),addQ=(q,a)=>{const k=plain(q).toLowerCase();if(!k||seen.has(k))return;seen.add(k);Q.push([q,a])};
+  if(M){M.parts.forEach((p,i)=>addQ(p.q,nxFirst(secs[i]&&secs[i].body,2)));let nc=0;M.parts.forEach(p=>p.chk.forEach(c=>{if(nc++<6)addQ(/[?.:]$/.test(plain(c[0]))||plain(c[0]).split(" ").length>6?c[0]:"What is meant by “"+plain(c[0])+"”?",c[1])}))}
+  else (l.cards||[]).forEach(c=>addQ(c[0],c[1]));
+  if(M)addQ(M.hook.q,M.hook.ans);
+  if(Q.length){B.push({t:"pb"});B.push({t:"h",l:2,text:"Summary questions"});
+    Q.forEach((q,i)=>{B.push({t:"q",label:String(i+1),text:plain(q[0])});if(T)B.push({t:"p",text:"Answer: "+plain(q[1]||"See the notes."),size:9.5,color:"0E5C4A",indent:340});else B.push({t:"lines",n:3})})}
+  const ver=T?"Teacher version":"Learner handout";
+  const model={title:"",meta:plain(l.t)+" | "+ver,footer:`${school?school+" | ":""}${SUB.title} | Lesson ${l.no} | ${ver}`,blocks:B};
+  const fn=("Notes - "+SUB.code+" "+l.no+" "+plain(l.t)+" - "+ver).replace(/[^\w .-]+/g,"").trim().slice(0,90);
+  const data=fmt==="docx"?await HUBDOC.docx(model):await HUBDOC.pdf(model);
+  return await saveFile(fn+"."+fmt,data);
+}
+function notesDialog(l,u,secs){
+  const SET=HUBSET.get(),school=(SET.teacher&&SET.teacher.school)||"",hasLogo=!!(SET.assess&&SET.assess.logo);
+  const ov=document.createElement("div");ov.className="x4ov";
+  ov.innerHTML=`<div class="x4dlg" role="dialog" aria-label="Export notes"><div class="x4dlg-h"><h2>Export notes: ${F(l.t)}</h2><button class="btn sm" type="button" data-close>Close</button></div>
+<p class="mute" style="margin-top:0">Both versions have the key terms, the notes with their diagrams and pictures, and summary questions at the end.</p>
+<div class="nxrow"><div><b>Learner handout</b><span class="mute">Space for name and class. Summary questions with lines to write on.</span></div><div class="row" style="gap:8px"><button class="btn pri" type="button" data-w="learner" data-f="pdf">PDF</button><button class="btn" type="button" data-w="learner" data-f="docx">Word</button></div></div>
+<div class="nxrow"><div><b>Teacher version</b><span class="mute">Adds the hook, guiding questions, tasks, the chosen Explore activity and all the answers.</span></div><div class="row" style="gap:8px"><button class="btn pri" type="button" data-w="teacher" data-f="pdf">PDF</button><button class="btn" type="button" data-w="teacher" data-f="docx">Word</button></div></div>
+<p class="mute">Header: <b>${school?F(school):"no school name yet"}</b> with ${hasLogo?"your school logo":"the built-in logo"}. Change these in Settings, under Teacher and Assessments.</p>
+<p class="mute" id="nx-m" role="status"></p></div>`;
+  document.body.appendChild(ov);
+  const close=()=>ov.remove();ov.querySelector("[data-close]").onclick=close;ov.addEventListener("click",e=>{if(e.target===ov)close()});ov.addEventListener("keydown",e=>{if(e.key==="Escape")close()});
+  const m=ov.querySelector("#nx-m"),say=t=>{m.textContent=t};
+  $$("[data-w]",ov).forEach(b=>b.onclick=async()=>{$$("[data-w]",ov).forEach(x=>x.disabled=true);say("Building the "+(b.dataset.w==="teacher"?"teacher version":"learner handout")+"…");
+    try{const r=await exportNotesT(l,u,secs,b.dataset.w,b.dataset.f,say);if(r==="saved")say((m.textContent.startsWith("Note:")?m.textContent+" ":"")+"Saved. Check your Downloads folder.");else if(r==="declined")say("");else say("Could not save the file.")}
+    catch(e){console.error(e);say("Sorry, the notes could not be built.")}
+    $$("[data-w]",ov).forEach(x=>x.disabled=false)});
+  setTimeout(()=>{const b=ov.querySelector("[data-w]");b&&b.focus()},30);
+}
+
 /* ---------- teacher: project an end-of-lesson summary and check on the board ---------- */
 function projEnd(l,u){
   const cards=(l.cards||[]).filter(c=>c&&c[0]&&c[1]).slice(0,5);
@@ -14402,6 +14616,7 @@ function projEnd(l,u){
 function viewLesson(key){
   const l=LS.find(x=>x.key===key);if(!l)return notFoundHome();
   if(curLesson!==key){lessonTab=(window.HUBSET&&HUBSET.get().lesson.start)||"engage";curLesson=key}
+  if(window.GL&&GL.pending(key))lessonTab="explain";
   if(lessonTab==="explore")lessonTab="explain";if(!STAGES.some(s=>s[0]===lessonTab))lessonTab="engage";{const hd=(window.HUBSET&&HUBSET.get().lesson.hide)||[];if(hd.includes(lessonTab))lessonTab=(STAGES.find(s=>!hd.includes(s[0]))||STAGES[0])[0]}
   S.last=key;save();
   S.crit=S.crit||{};
@@ -14409,7 +14624,7 @@ function viewLesson(key){
   const secs=splitNotes(l);
   const tag=`Lesson ${l.no} | ${F(l.t)}`;
   app.innerHTML=`<div style="--c:${u.col};--on:${u.on}">
-<section class="deck-hero">${typeof pracBanner==="function"?pracBanner(l,subKey):""}<div class="herotop"><span class="pill">Lesson ${l.idx+1} of ${nIn}</span><span class="row" style="gap:8px;flex-wrap:wrap"><button class="btn" id="expl" type="button">Export PowerPoint</button>${HUB.teacher?`<a class="btn" href="#plan" data-plan="${l.key}">Lesson plan</a>`:""}<button class="btn" id="done" type="button"></button></span></div>
+<section class="deck-hero">${typeof pracBanner==="function"?pracBanner(l,subKey):""}<div class="herotop"><span class="pill">Lesson ${l.idx+1} of ${nIn}</span><span class="row" style="gap:8px;flex-wrap:wrap"><button class="btn" id="expl" type="button">Export PowerPoint</button>${HUB.teacher?`<button class="btn" id="nxopen" type="button">Export notes</button><a class="btn" href="#plan" data-plan="${l.key}">Lesson plan</a>`:""}<button class="btn" id="done" type="button"></button></span></div>
 <div class="crumb2"><a href="#home">Topics</a> / <a href="#u${u.n}">Topic ${u.n}: ${F(u.name)}</a></div>
 <h1>${F(l.t)}</h1><p class="sub">${F(l.sum)}</p>
 <div class="meta2"><b>${SUB.title}</b> &nbsp;|&nbsp; Topic ${u.n}: ${F(u.name)}</div>${typeof sylBlock==="function"?sylBlock(l,subKey):""}
@@ -14421,6 +14636,7 @@ function viewLesson(key){
   function doneLabel(){db.textContent=S.done[key]?"Completed ✓":"Mark lesson as done";db.classList.toggle("pri",!!S.done[key])}
   doneLabel();
   $("#expl").addEventListener("click",e=>runExport(e.currentTarget,()=>exportLessonPPTX(l,u,SUB)));
+  {const nb=$("#nxopen");if(nb)nb.addEventListener("click",()=>notesDialog(l,u,secs))}
   const dpl=$("[data-plan]");if(dpl)dpl.addEventListener("click",()=>{planPick=l.key});
   db.addEventListener("click",()=>{S.done[key]=!S.done[key];save();doneLabel()});
   function go(t){lessonTab=t;$$(".stg").forEach(x=>x.setAttribute("aria-selected",String(x.dataset.t===t)));const dd=$("#x4dd");if(dd)dd.value=t;panel();const h=$("#x4hdr");if(h&&window.scrollY>h.offsetTop)window.scrollTo(0,h.offsetTop-8)}
@@ -14438,6 +14654,7 @@ function viewLesson(key){
       const coreC=mk(core.filter(s=>s.title!==l.t||secs.length===1),0,0).concat([["I can score at least 80% on the practice questions at the end of the lesson.",90]]);
       const extC=mk(ext,1,40).concat(ext.length?[]:[[SUB.keyIdea,41]]).concat([["I can answer exam-style questions on this topic and use the mark scheme to improve.",42]]);
       const cb=a=>a.map(c=>`<label><input type="checkbox" data-c="${c[1]}" ${S.crit[key+":"+c[1]]?"checked":""}><span>${c[0]}</span></label>`).join("");
+      {const kt=window.GL?GL.keyTermsHTML(l):"";if(kt)h+=slide("","Key terms","","Words to know in this lesson",`<div id="gl-ktbox">${kt}</div>`)}
       h+=slide("","Success criteria","","How we will know we have got there",`<div class="crit"><div class="critbox"><h3>Core: I can …</h3>${cb(coreC)}</div><div class="critbox x"><h3>Extended (Supplement): I can …</h3>${cb(extC)}</div></div>`,"Traffic-light yourself now, then again at the end of the lesson. Ticks are saved in this browser.");
       const b=l.ibl,st=parseSteps(b.task);
       h+=slide("ibl","IBL | Engage","red",F(b.q),`<div class="iblgrid"><div>${st.lead}${stepsHTML(st.items)}</div><div><div class="sidebox"><h5>Evidence to keep</h5><p>Write your thinking here before you read the notes. We return to it in the plenary.</p><textarea id="jr" aria-label="Your working" placeholder="Your working (saved in this browser)"></textarea></div></div></div>`,"Inquiry-based learning: ask, predict, test and explain before the teacher confirms.",`<span class="tag" style="margin-right:auto;margin-left:8px">Starter: wonder first</span>`);
@@ -14455,7 +14672,7 @@ function viewLesson(key){
       if(!HUB.teacher)h+=`<section class="slide notesx"><div class="sl-top"><span class="pill">Take it with you</span><span class="tag">${tag}</span></div><h2 class="sl-title">Download these notes</h2><p class="lead">Make a copy of this lesson’s notes to study offline or print. Your own name goes on the top.</p><div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn pri" type="button" data-nx="pdf">Download as PDF</button><button class="btn" type="button" data-nx="docx">Download as Word (.docx)</button><span class="meta" id="nxmsg" role="status"></span></div></section>`;
       xh=h;}
       const secHTML=s=>{const fg=figsOf(s.body),solo=fg.f.filter(k=>!FIGWIDE(k)),wide=fg.f.filter(k=>FIGWIDE(k));const html=F(fg.text),side=solo.map(k=>FIGS[k]?FIGS[k]():"").join(""),below=wide.map(k=>FIGS[k]?FIGS[k]():"").join("");return `<div class="sl-body ${side?"two":""}"><div class="notes">${html}</div>${side?`<div>${side}</div>`:""}</div>${below}`};
-      X4CTX={l,u,U,sub:subKey,SUB,secs,prev,nxt,F,secHTML,extra:xh?`<div class="x4extra">${xh}</div>`:"",projEnd:()=>projEnd(l,u),after:el=>{wrapTables(el)}};
+      X4CTX={l,u,U,sub:subKey,SUB,secs,prev,nxt,F,secHTML,extra:xh?`<div class="x4extra">${xh}</div>`:"",projEnd:()=>projEnd(l,u),after:el=>{wrapTables(el);if(window.GL)GL.wrap(el.querySelector(".x4notes"),subKey,l.key)}};
       h+=X4.render(X4CTX);
       h+=nextBtn("explain");
     }else if(lessonTab==="practise"){
@@ -14485,7 +14702,7 @@ function viewLesson(key){
     $$("[data-endproj]",p).forEach(b=>b.addEventListener("click",()=>projEnd(l,u)));
     $$("[data-nx]",p).forEach(b=>b.addEventListener("click",()=>exportNotes(l,u,secs,b.dataset.nx,b)));
     $$("[data-go]",p).forEach(b=>b.addEventListener("click",()=>go(b.dataset.go)));
-    $$("input[data-c]",p).forEach(c=>c.addEventListener("change",()=>{S.crit[key+":"+c.dataset.c]=c.checked;save()}));
+    $$("input[data-c]",p).forEach(c=>c.addEventListener("change",()=>{S.crit[key+":"+c.dataset.c]=c.checked;save()}));if(window.GL)GL.bindKeyTerms($("#gl-ktbox",p));
     const gaP=$("#ga-print");if(gaP)gaP.onclick=()=>{const w=window.open("","_blank");if(!w){alert("Allow pop-ups to print.");return}w.document.write("<!doctype html><meta charset=utf-8><title>Group sheet</title><style>body{font:14px Arial;margin:24px}li{margin:4px 0}</style>"+window.__GA);w.document.close();w.print()};
     const jr=$("#jr");if(jr){jr.value=S.ibl[key]||"";let t;jr.addEventListener("input",()=>{clearTimeout(t);t=setTimeout(()=>{S.ibl[key]=jr.value;save()},400)})}
     if($("#prm"))mountPractice($("#prm"),l.pr);
@@ -16187,7 +16404,8 @@ function gloss(body,az){
   const letters=[...new Set(all.map(g=>plain(g.t).charAt(0).toUpperCase()))];let L="";
   const draw=()=>{const q=$("#glq",box).value.trim().toLowerCase();
     const r=all.filter(g=>(!L||plain(g.t).charAt(0).toUpperCase()===L)&&(!q||plain(g.t).toLowerCase().includes(q)||g.d.toLowerCase().includes(q)));
-    $("#gll",box).innerHTML=r.map(g=>`<dt>${F(esc(g.t))} <span class="meta">${g.l?"Lesson "+esc(g.l):""}</span></dt><dd>${F(esc(g.d))}</dd>`).join("")||"<p>No matches.</p>"};
+    $("#gll",box).innerHTML=r.map(g=>`<dt><button type="button" class="gl-gt" data-gk="${esc(plain(g.t))}" title="Meaning and a link to the notes">${F(esc(g.t))}</button> <span class="meta">${g.l?"Lesson "+esc(g.l):""}</span></dt><dd>${F(esc(g.d))}</dd>`).join("")||"<p>No matches.</p>"};
+  $("#gll",box).onclick=ev=>{const b=ev.target.closest(".gl-gt");if(!b||!window.GL)return;const e=GL.find(GK,b.dataset.gk);if(e)GL.card(b,GK,e,null,closeTools)};
   $("#glaz",box).innerHTML=`<button class="btn sm" data-l="">All</button>`+letters.map(l=>`<button class="btn sm" data-l="${l}">${l}</button>`).join("");
   $$("[data-l]",box).forEach(b=>b.onclick=()=>{L=b.dataset.l;draw()});$("#glq",box).oninput=draw;draw();
 }

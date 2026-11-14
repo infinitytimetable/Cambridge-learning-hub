@@ -209,3 +209,22 @@ html{overflow-anchor:none}
 body:has(.x4hdr) header.top{position:static}
 .x4rev:not(.open){max-height:360px}
 .tmr.x4c.x4mini .x4cbtn button+button{display:none}
+/* glossary words, pop-up and key terms */
+.gl-w{all:unset;cursor:pointer;border-bottom:2px dotted var(--x4t);color:inherit;font:inherit}
+.gl-w:hover,.gl-w:focus-visible{background:var(--x4ts);outline:none;border-bottom-style:solid}
+.gl-pop{position:fixed;z-index:950;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px #0004;padding:12px 14px;font-size:15px}
+.gl-pop p{margin:6px 0 10px}
+.gl-h{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.gl-h b{font-size:17px;color:var(--x4t)}
+.gl-x{border:0;background:none;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 6px}
+.gl-f{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.gl-kt{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.gl-k{border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden}
+.gl-t{display:block;width:100%;text-align:left;border:0;background:none;color:var(--ink);font:600 calc(16*var(--u)) var(--f-body);padding:10px 12px;cursor:pointer}
+.gl-t::after{content:" ▸";color:var(--muted)}.gl-t.on{color:var(--x4t)}.gl-t.on::after{content:" ▾"}
+.gl-k p{margin:0;padding:0 12px 10px;font-size:calc(14*var(--u));color:var(--ink)}
+.gl-gt{border:0;background:none;padding:0;font:inherit;font-weight:700;color:var(--x4t);cursor:pointer;text-align:left}
+.gl-gt:hover{text-decoration:underline}
+.gl-flash,.gl-mark{background:#ffe56a!important;color:#111!important;border-radius:4px;transition:background 1s}
+.gl-m{font:13px/1.35 var(--f-body,inherit);color:var(--muted);flex:1 1 140px}
+.nxrow{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0;background:var(--surface)}.nxrow>div:first-child{display:flex;flex-direction:column;gap:2px;flex:1 1 260px}

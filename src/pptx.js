@@ -461,6 +461,17 @@ async function buildLesson(pres,l,u,SUB,opts){
     }
   }
 
+  /* ---- Engage: key terms (meanings appear on click, one at a time) ---- */
+  if(window.GL){const kt=GL.terms(l);if(kt.length){
+    const n=kt.length,cols=n>8?3:2,rows=Math.ceil(n/cols),gap=0.18,cw=(CW-gap*(cols-1))/cols,ch=Math.min(1.45,(CB-CY-0.05-gap*(rows-1))/rows);
+    const s=frame(pres,cx,{theme:"std",pill:"Engage | Key terms",title:"Words to know in this lesson",foot:"Say what each word means before you click to check.",notes:"Ask learners to explain each word in their own words first. Each click shows the next meaning."});
+    let fs=18;const fit=f=>kt.every(t=>lineCount(plain(t[1]),cw-0.3,f,false)*f*LH/72<=ch-0.62);while(fs>10&&!fit(fs))fs--;
+    kt.forEach((t,i)=>{const c=i%cols,r=Math.floor(i/cols),x=MX+c*(cw+gap),y=CY+r*(ch+gap);
+      s.addShape("roundRect",{x,y,w:cw,h:ch,fill:{color:C.WHITE},line:{color:C.MINTLINE,width:1},rectRadius:0.08});
+      s.addText(toRuns(runsOf(t[0],{}),{fontFace:HF,fontSize:17,bold:true,color:C.ACC}),{x:x+0.15,y:y+0.08,w:cw-0.3,h:0.42,valign:"middle",margin:0});
+      rv(s,i+1);s.addText(toRuns(runsOf(t[1],{}),{fontFace:BF,fontSize:fs,color:C.INK}),{x:x+0.15,y:y+0.52,w:cw-0.3,h:ch-0.6,valign:"top",margin:0});rv(s,0)});
+  }}
+
   /* ---- Engage: success criteria ---- */
   {
     const mk=(arr)=>arr.map(sc=>`I can explain and use the ideas in “${plain(sc.title)}”.`);

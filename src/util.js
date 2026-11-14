@@ -347,7 +347,7 @@ async function toPdf(model){
   obj(1,()=>ps("<< /Type /Catalog /Pages 2 0 R >>"));
   obj(2,()=>ps("<< /Type /Pages /Count "+N+" /Kids ["+pages.map((_,i)=>(pgBase+i*2+1)+" 0 R").join(" ")+"] >>"));
   ["Helvetica","Helvetica-Bold","Helvetica-Oblique","Helvetica-BoldOblique"].forEach((n,k)=>obj(fontIds[k],()=>ps("<< /Type /Font /Subtype /Type1 /BaseFont /"+n+" /Encoding /WinAnsiEncoding >>")));
-  obj(infoId,()=>ps("<< /Title "+pdfLit(model.title||"Document")+" /Producer (Cambridge Learning Hub) >>"));
+  obj(infoId,()=>ps("<< /Title "+pdfLit(model.meta||model.title||"Document")+" /Producer (Cambridge Learning Hub) >>"));
   images.forEach((j,k)=>obj(imgBase+k,()=>{ps("<< /Type /XObject /Subtype /Image /Width "+j.pw+" /Height "+j.ph+" /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /"+(j.flate?"FlateDecode":"DCTDecode")+" /Length "+j.bytes.length+" >>\nstream\n");put(j.bytes);ps("\nendstream")}));
   for(let i=0;i<N;i++){
     const raw=enc.encode(pages[i].ops.join("\n")),z=await deflate(raw),data=z||raw;

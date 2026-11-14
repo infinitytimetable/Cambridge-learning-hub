@@ -1,15 +1,15 @@
 {
  "app": "LOTS Cambridge Learning Hub (Master, Windows)",
- "version": "4.1",
+ "version": "4.2",
  "date": "2026-11-14",
  "minSetup": "4.0",
- "notes": "PowerPoint export rebuilt: follows the 4.0 lesson flow (topic hook, connector, hook, Explore, Explain parts with guiding questions and quick checks, Summary, colour check), click-to-reveal animations, pictures from your content folder, and simulation slides with an Open in the hub link.",
+ "notes": "Key terms before the success criteria (tap to check) and a Key terms PowerPoint slide; key words in the notes and the Glossary open their meaning with a link to the notes; Export notes (Learner handout or Teacher version, PDF or Word) with your school name and logo from Settings, diagrams, pictures and summary questions.",
  "files": [
   {
    "name": "hub.html",
    "path": "dist/hub.html",
-   "sha256": "b3caf936d3b981e43117353bf6e15f3fb992b9ace83c2573261f8902ef7d4867",
-   "size": 43934549
+   "sha256": "268506e9033fc19797a1076cf460d68679abbc1874a8c67c2b064bc520175b14",
+   "size": 43958852
   },
   {
    "name": "picker.html",

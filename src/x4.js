@@ -215,7 +215,11 @@ function bind(p){
   fillHdr();
   const showPart=(i,auto)=>{CUR.part=i;S.part=i;sv(S);const pb=p.querySelector("#x4pb");pb.innerHTML=partHTML();ctx.after&&ctx.after(pb);ladder(p);if(auto&&T)startTask();reproj("x4-explain")};
   const startTask=()=>{const pt=M.parts[CUR.part];if(window.HUBTIMER)HUBTIMER.task(pt.m*60,"Part "+(CUR.part+1)+": "+(TK[pt.tk]||"Task"))};
-  showPart(CUR.part,false);
+  {const g=window.GL&&GL.pending(ctx.l.key);
+    if(g){GL.clearPending();const pi=Math.max(0,Math.min(M.parts.length-1,+g.part||0));CUR.done.add(pi);S.done=[...CUR.done];showPart(pi,false);
+      const n=p.querySelector("#x4notes");if(n)n.classList.add("open");ladder(p);
+      setTimeout(()=>{const ex=p.querySelector("#x4-explain");if(ex)ex.scrollIntoView({block:"start"});setTimeout(()=>GL.flash(p.querySelector("#x4notes"),g.term),350)},120)}
+    else showPart(CUR.part,false)}
   const echo=()=>{const b=p.querySelector("#x4back"),t=p.querySelector("#x4ideas");if(b)b.textContent=(t&&t.value)||"(nothing written yet)"};echo();
   p.addEventListener("input",e=>{
     const t=e.target;

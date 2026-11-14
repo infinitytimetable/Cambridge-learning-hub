@@ -154,7 +154,8 @@ function gloss(body,az){
   const letters=[...new Set(all.map(g=>plain(g.t).charAt(0).toUpperCase()))];let L="";
   const draw=()=>{const q=$("#glq",box).value.trim().toLowerCase();
     const r=all.filter(g=>(!L||plain(g.t).charAt(0).toUpperCase()===L)&&(!q||plain(g.t).toLowerCase().includes(q)||g.d.toLowerCase().includes(q)));
-    $("#gll",box).innerHTML=r.map(g=>`<dt>${F(esc(g.t))} <span class="meta">${g.l?"Lesson "+esc(g.l):""}</span></dt><dd>${F(esc(g.d))}</dd>`).join("")||"<p>No matches.</p>"};
+    $("#gll",box).innerHTML=r.map(g=>`<dt><button type="button" class="gl-gt" data-gk="${esc(plain(g.t))}" title="Meaning and a link to the notes">${F(esc(g.t))}</button> <span class="meta">${g.l?"Lesson "+esc(g.l):""}</span></dt><dd>${F(esc(g.d))}</dd>`).join("")||"<p>No matches.</p>"};
+  $("#gll",box).onclick=ev=>{const b=ev.target.closest(".gl-gt");if(!b||!window.GL)return;const e=GL.find(GK,b.dataset.gk);if(e)GL.card(b,GK,e,null,closeTools)};
   $("#glaz",box).innerHTML=`<button class="btn sm" data-l="">All</button>`+letters.map(l=>`<button class="btn sm" data-l="${l}">${l}</button>`).join("");
   $$("[data-l]",box).forEach(b=>b.onclick=()=>{L=b.dataset.l;draw()});$("#glq",box).oninput=draw;draw();
 }
