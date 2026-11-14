@@ -55,7 +55,7 @@ if (-not (Test-Path -LiteralPath $cfg['browser'])) { throw ('The browser set up 
 if (-not (Test-Path -LiteralPath (Join-Path $here 'hub.html'))) { throw 'hub.html is missing from the install folder.' }
 New-Item -ItemType Directory -Force -Path $cfg['data'] | Out-Null
 $hubUrl = ([Uri](Join-Path $here 'hub.html')).AbsoluteUri
-$LaunchArgs = @('--app=' + $hubUrl, '--user-data-dir=' + $cfg['data'], '--no-first-run', '--no-default-browser-check', '--start-maximized')
+$LaunchArgs = @('--app=' + $hubUrl, '--user-data-dir=' + $cfg['data'], '--no-first-run', '--no-default-browser-check', '--start-maximized', '--allow-file-access-from-files')
 Start-Process -FilePath $cfg['browser'] -ArgumentList $LaunchArgs
 
 # ---- check GitHub for a newer version in the background (used next time the Hub opens) ----

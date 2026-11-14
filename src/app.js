@@ -51,9 +51,10 @@ async function saveFile(name,data){
   try{if(window.claude&&claude.use){const d=await claude.use("downloads");if(d){await d.save({filename:name,data});return "saved"}}}catch(e){if(e&&e.code==="declined")return "declined"}
   try{const blob=data instanceof Blob?data:new Blob([data]);const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{a.remove();URL.revokeObjectURL(a.href)},1500);return "saved"}catch(e){return "failed"}
 }
+function alertBox(t){const d=document.createElement("div");d.className="x4annhint";d.style.cssText="top:auto;bottom:20px;pointer-events:auto;cursor:pointer;max-width:min(680px,92vw);font-size:14px;padding:12px 16px;border-radius:12px";d.textContent=t+" (tap to close)";d.onclick=()=>d.remove();document.body.appendChild(d);setTimeout(()=>d.remove(),15000)}
 async function runExport(btn,fn,label){
   const old=btn.textContent;btn.disabled=true;btn.textContent="Building PowerPoint…";
-  try{const r=await fn();const st=await saveFile(r.filename,r.data);btn.textContent=st==="saved"?"Saved ✓":st==="declined"?old:"Could not save";}
+  try{const r=await fn();const st=await saveFile(r.filename,r.data);btn.textContent=st==="saved"?"Saved ✓":st==="declined"?old:"Could not save";try{const miss=typeof PPX!=="undefined"?PPX.missing:[];if(miss.length&&st==="saved")alertBox(miss.length+" picture"+(miss.length>1?"s":"")+" could not be added to the PowerPoint ("+miss.slice(0,4).join(", ")+(miss.length>4?" …":"")+"). Open the hub from the LOTS Hub desktop shortcut (version 4.1 or newer) so pictures from your content folder can be included.")}catch(e){}}
   catch(e){console.error(e);btn.textContent="Export failed"}
   setTimeout(()=>{btn.textContent=old;btn.disabled=false},2500);
 }

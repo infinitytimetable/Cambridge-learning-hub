@@ -23001,11 +23001,14 @@ function toRuns(runs,base,para){
 }
 
 /* ---------- figures: SVG to PNG ---------- */
-const figCache={};
+const figCache={};let MISSING=[];
 async function rasterFig(name){
   if(figCache[name])return figCache[name];
   let html="";try{html=typeof FIGS!=="undefined"&&FIGS[name]?FIGS[name]():""}catch(e){html=""}
   if(!html){return(figCache[name]=[])}
+  return(figCache[name]=await rasterHTML(html,name));
+}
+async function rasterHTML(html,name){
   const host=document.createElement("div");
   host.setAttribute("style","position:fixed;left:-20000px;top:0;width:900px;visibility:hidden;pointer-events:none;color:#1B2A2F;background:#fff;font-family:Calibri,Carlito,Arial,sans-serif;"+LIGHTVARS);
   host.setAttribute("data-theme","light");
@@ -23017,8 +23020,8 @@ async function rasterFig(name){
       const fc=im.closest("figure")&&im.closest("figure").querySelector("figcaption");
       const capRuns=fc?tidy(inl(fc,{},[])):[];
       im.loading="eager";await new Promise(res=>{if(im.complete&&im.naturalWidth)res();else{im.onload=res;im.onerror=res;setTimeout(res,3000)}});
-      if(im.naturalWidth){const c=document.createElement("canvas");c.width=im.naturalWidth;c.height=im.naturalHeight;const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0);
-        out.push({data:c.toDataURL("image/jpeg",.85),w:im.naturalWidth,h:im.naturalHeight,cap:capRuns,alt:im.getAttribute("alt")||name})}
+      if(im.naturalWidth){try{const k=Math.min(1,1800/im.naturalWidth),c=document.createElement("canvas");c.width=Math.round(im.naturalWidth*k);c.height=Math.round(im.naturalHeight*k);const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);
+        out.push({data:c.toDataURL("image/jpeg",.85),w:c.width,h:c.height,cap:capRuns,alt:im.getAttribute("alt")||name})}catch(e){MISSING.push(im.getAttribute("alt")||name)}}
     }
     const PROPS=["fill","fill-opacity","stroke","stroke-width","stroke-opacity","stroke-dasharray","stroke-linecap","stroke-linejoin","opacity","font-size","font-weight","font-style","text-anchor","dominant-baseline","letter-spacing","stop-color","stop-opacity","paint-order","text-decoration"];
     for(const svg of svgs){
@@ -23047,7 +23050,7 @@ async function rasterFig(name){
     }
   }catch(e){console.warn("figure failed",name,e)}
   host.remove();
-  return(figCache[name]=out);
+  return out;
 }
 
 /* ---------- slide scaffolding ---------- */
@@ -23265,7 +23268,7 @@ async function buildLesson(pres,l,u,SUB,opts){
       s.addText(st[1],{x:px+0.52,y:5.55,w:1.5,h:0.55,fontFace:BF,fontSize:16,bold:true,color:C.WHITE,valign:"middle",margin:0});
     });
     s.addText((SUB.title||SUB.name)+"  |  Cambridge",{x:0.9,y:6.6,w:11.5,h:0.4,fontFace:BF,fontSize:14,color:C.MINTLINE,margin:0});
-    s.addNotes("Title slide. Share the lesson focus: "+plain(l.sum)+" The five stages are Engage, Explore, Explain, Practise and Reflect.");
+    s.addNotes("Title slide. Share the lesson focus: "+plain(l.sum)+" The stages are Engage, Explore & Explain, Practise and Reflect.");
   }
 
   /* ---- Engage: objectives ---- */
@@ -23307,6 +23310,8 @@ async function buildLesson(pres,l,u,SUB,opts){
     });
   }
 
+  const M=opts.old?null:x4Model(l,u,SUB);
+  if(M){await build4(pres,cx,l,u,SUB,M,secs)}else{
   /* ---- IBL helper ---- */
   async function iblSlides(pill,title,html,sideFn,foot,notes){
     const st=parseSteps(html||"");
@@ -23377,6 +23382,7 @@ async function buildLesson(pres,l,u,SUB,opts){
     });
   }
 
+  }
   /* ---- Practise: worksheet ---- */
   const ws=l.ws||[];
   {
@@ -23485,7 +23491,7 @@ async function buildLesson(pres,l,u,SUB,opts){
   {
     const nxt=u.lessons[idx+1];
     const steps={lead:[],items:[
-      runsOf("<b>Answer your own question.</b> Go back to your Engage working. Which parts of “"+F(ibl.q)+"” can you now answer using evidence from the notes?"),
+      (M?runsOf("<b>Answer the big question.</b> “"+F(M.hook.q)+"” Use evidence from the notes and compare with the class’s first ideas."):runsOf("<b>Answer your own question.</b> Go back to your Engage working. Which parts of “"+F(ibl.q)+"” can you now answer using evidence from the notes?")),
       runsOf("<b>3-2-1.</b> Write 3 key facts, 2 connections between ideas and 1 question you would like to investigate next."),
       runsOf("<b>Concept map.</b> Link the key words from this lesson with arrows and a verb on every link."),
       runsOf("<b>Self-assess.</b> Mark the worksheet with the mark scheme, then redo every lost mark in a different colour.")]};
@@ -23499,6 +23505,281 @@ async function buildLesson(pres,l,u,SUB,opts){
         sideBox(s,MX+lw+0.35,yy,sw,"Bring","Your concept map and your corrected answers.",16,th);}
     });
   }
+  if(M)colourSlide(pres,cx);
+}
+
+/* ---------- 4.0: Explore & Explain slides (topic hook, connector, hook, Explore, Explain parts, Summary) ---------- */
+THEMES.top={bg:"FFF6E5",pill:"B86F00",title:C.DK,line:"F2D49B",accent:"B86F00"};
+THEMES.qc={bg:C.WHITE,pill:C.ACC,title:C.DK,line:C.MINTLINE,accent:C.ACC};
+const TKN={talk:"Turn and talk",pred:"Predict",sketch:"Sketch it",write:"Write it",calc:"Calculate",think:"Think, pair, share",list:"List it",recall:"Recall",label:"Label it",expl:"Explain it",comp:"Compare",sort:"Sort it",draw:"Draw it",apply:"Apply it",read:"Read and answer",spot:"Spot the mistake",rank:"Rank it",show:"Show me"};
+/* click reveals: anything added while s._rv=k is named RVk_n; finish() turns each k into one click */
+function rv(s,k){if(!s._aw){s._aw=1;s._rn=0;["addText","addShape","addImage","addTable"].forEach(m=>{const o=s[m].bind(s);s[m]=function(a,b){if(s._rv){const op=m==="addImage"?a:b;if(op&&typeof op==="object")op.objectName="RV"+s._rv+"_"+(++s._rn)}return o(a,b)}})}s._rv=k||0}
+function animXml(xml){
+  const re=/<p:(nvSpPr|nvPicPr|nvGraphicFramePr)>\s*<p:cNvPr id="(\d+)" name="RV(\d+)_\d+"/g;let m;const G={};
+  while((m=re.exec(xml)))(G[m[3]]=G[m[3]]||[]).push({id:m[2],k:m[1]});
+  const ks=Object.keys(G).map(Number).filter(k=>k>0).sort((a,b)=>a-b);if(!ks.length)return xml;
+  let n=3;const par=[],bld=[];
+  ks.forEach(k=>{const a=n++,b=n++;let inner="";
+    G[k].forEach((it,j)=>{const c=n++,d=n++,grp=it.k!=="nvPicPr";
+      inner+=`<p:par><p:cTn id="${c}" presetID="1" presetClass="entr" presetSubtype="0" fill="hold"${grp?' grpId="0"':""} nodeType="${j?"withEffect":"clickEffect"}"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst><p:set><p:cBhvr><p:cTn id="${d}" dur="1" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst></p:cTn><p:tgtEl><p:spTgt spid="${it.id}"/></p:tgtEl><p:attrNameLst><p:attrName>style.visibility</p:attrName></p:attrNameLst></p:cBhvr><p:to><p:strVal val="visible"/></p:to></p:set></p:childTnLst></p:cTn></p:par>`;
+      if(it.k==="nvSpPr")bld.push(`<p:bldP spid="${it.id}" grpId="0"/>`);else if(it.k==="nvGraphicFramePr")bld.push(`<p:bldGraphic spid="${it.id}" grpId="0"><p:bldAsOne/></p:bldGraphic>`)});
+    par.push(`<p:par><p:cTn id="${a}" fill="hold"><p:stCondLst><p:cond delay="indefinite"/></p:stCondLst><p:childTnLst><p:par><p:cTn id="${b}" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>${inner}</p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par>`)});
+  const t=`<p:timing><p:tnLst><p:par><p:cTn id="1" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst><p:seq concurrent="1" nextAc="seek"><p:cTn id="2" dur="indefinite" nodeType="mainSeq"><p:childTnLst>${par.join("")}</p:childTnLst></p:cTn><p:prevCondLst><p:cond evt="onPrev" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:prevCondLst><p:nextCondLst><p:cond evt="onNext" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:nextCondLst></p:seq></p:childTnLst></p:cTn></p:par></p:tnLst>${bld.length?"<p:bldLst>"+bld.join("")+"</p:bldLst>":""}</p:timing>`;
+  xml=xml.replace(/<p:timing>[\s\S]*?<\/p:timing>/,"");
+  if(xml.indexOf("</p:clrMapOvr>")>=0)return xml.replace("</p:clrMapOvr>","</p:clrMapOvr>"+t);
+  return xml.replace("</p:sld>",t+"</p:sld>");
+}
+/* pictures from the computer (content folder): need the launcher's file-access switch */
+function loadImg(url,alt){return new Promise(res=>{const im=new Image();let done=false;const fin=v=>{if(!done){done=true;res(v)}};
+  im.onload=()=>{try{const k=Math.min(1,1800/im.naturalWidth),c=document.createElement("canvas");c.width=Math.round(im.naturalWidth*k);c.height=Math.round(im.naturalHeight*k);const g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,c.width,c.height);g.drawImage(im,0,0,c.width,c.height);fin({data:c.toDataURL("image/jpeg",.88),w:c.width,h:c.height,cap:[],alt:alt||"Picture"})}catch(e){MISSING.push(alt||url);fin(null)}};
+  im.onerror=()=>{MISSING.push(alt||url);fin(null)};setTimeout(()=>fin(null),9000);im.src=url})}
+function deskList(dir){try{if(typeof DESK!=="undefined"&&DESK.on&&window.lotsDesktop)return (window.lotsDesktop.walk(dir)||[]).filter(f=>/\.(png|jpe?g|webp|gif)$/i.test(f.rel)).map(f=>({rel:f.rel,name:f.rel.split("/").pop(),url:window.lotsDesktop.url(f.rel)}))}catch(e){}return[]}
+/* simulations: a starting picture plus the first control at its lowest and highest setting */
+const simCache={};
+async function simShots(id){
+  if(simCache[id])return simCache[id];
+  const out={shots:[],ctl:"",lo:"",hi:"",t:""};
+  if(typeof simMount==="undefined"||typeof SIMS==="undefined"||!SIMS[id])return(simCache[id]=out);
+  out.t=SIMS[id].t;
+  const host=document.createElement("div");host.setAttribute("style","position:fixed;left:-20000px;top:0;width:1200px;pointer-events:none");document.body.appendChild(host);
+  const wait=ms=>new Promise(r=>setTimeout(r,ms));
+  const snap=cap=>{const cv=host.querySelector("canvas");if(!cv)return;try{out.shots.push({data:cv.toDataURL("image/png"),w:cv.width,h:cv.height,cap:cap?[{t:cap}]:[],alt:out.t+" simulation"})}catch(e){}};
+  let stop=null;
+  try{
+    stop=simMount(host,id);await wait(1500);snap("Starting settings");
+    const sl=[...host.querySelectorAll('input[type="range"]')].find(x=>x.offsetParent!==null);
+    if(sl){const lab=sl.closest("label"),nm=lab&&lab.querySelector("span"),vb=lab&&lab.querySelector("b");out.ctl=nm?nm.textContent.trim():"the first control";
+      const set=async v=>{sl.value=v;sl.dispatchEvent(new Event("input",{bubbles:true}));await wait(1700);return vb?vb.textContent.trim():String(v)};
+      out.lo=await set(sl.min);snap(out.ctl+": "+out.lo);out.hi=await set(sl.max);snap(out.ctl+": "+out.hi)}
+  }catch(e){console.warn("sim snapshot failed",id,e)}
+  try{stop&&stop()}catch(e){}host.remove();
+  return(simCache[id]=out);
+}
+function hubLink(hash){try{return location.href.split("#")[0]+"#"+hash}catch(e){return ""}}
+function x4Model(l,u,SUB){
+  try{if(typeof X4==="undefined"||!window.HUBAPP||typeof SUBJ==="undefined")return null;
+    const sub=HUBAPP.subKey,S0=SUBJ[sub];if(!S0||!S0.units)return null;
+    const U=S0.units,all=U.flatMap(x=>x.lessons),i=all.indexOf(l);
+    const ctx={l,u,U,sub,SUB,secs:splitNotes(l),prev:i>0?all[i-1]:null,F:(HUBAPP.F||F)};
+    const M=X4.model(ctx);M.ctx=ctx;M.P=X4.plan(M,ctx);M.sub=sub;M.act=(M.acts.find((x,j)=>String(j)===String(M.S.act))||M.acts[0]||null);
+    return M}catch(e){console.warn("4.0 model failed",e);return null}
+}
+const AKN=()=>(typeof X4!=="undefined"&&X4.AK)||{};
+/* a visual (hook or topic hook): pictures, or big text */
+async function visualOf(v){
+  if(!v)return{figs:[]};
+  const i=v.indexOf(":"),t=v.slice(0,i),val=v.slice(i+1);
+  if(t==="fig"){let f=[];for(const k of val.split(","))f.push(...await rasterFig(k));return{figs:f}}
+  if(t==="svg")return{figs:await rasterHTML(val,"hook")};
+  if(t==="img"){const im=await loadImg(val,"Hook picture");return{figs:im?[im]:[]}}
+  if(t==="sim"){const ss=await simShots(val);return{figs:ss.shots.slice(0,1)}}
+  if(t==="emo"||t==="txt"){const p=val.split("|");return{figs:[],big:p[0],small:p[1]||""}}
+  return{figs:[]};
+}
+function drawVisual(s,vis,x,y,w,h,k){
+  s.addShape("roundRect",{x,y,w,h,fill:{color:C.DK},line:{type:"none"},rectRadius:0.12});
+  s.addText([{text:"?",options:{fontFace:HF,fontSize:96,bold:true,color:C.AMBER,breakLine:true}},{text:"Look carefully. What do you notice? What do you wonder?",options:{fontFace:BF,fontSize:16,color:C.MINT}}],{x,y,w,h,align:"center",valign:"middle",margin:0.2});
+  rv(s,k);
+  if(vis.figs&&vis.figs.length){s.addShape("roundRect",{x,y,w,h,fill:{color:C.WHITE},line:{color:C.LINE,width:1},rectRadius:0.12});drawFigs(s,vis.figs.slice(0,2),x+0.2,y+0.15,w-0.4,h-0.3)}
+  else if(vis.big){s.addShape("roundRect",{x,y,w,h,fill:{color:C.WHITE},line:{color:C.LINE,width:1},rectRadius:0.12});
+    s.addText([{text:plain(vis.big),options:{fontFace:HF,fontSize:/[☀-➿\uD83C-\uDBFF]/.test(vis.big)?72:40,bold:true,color:C.DK,breakLine:true}},{text:plain(vis.small||""),options:{fontFace:BF,fontSize:18,color:C.MUTED}}],{x:x+0.3,y:y+0.2,w:w-0.6,h:h-0.4,align:"center",valign:"middle",margin:0})}
+  rv(s,0);
+}
+function bigQ(s,text,x,y,w,h,color){const fs=titleFs(plain(text),w,[30,26,24,22,20],h);s.addText(toRuns(runsOf(text,{}),{fontFace:HF,fontSize:fs,bold:true,color:color||C.ACC}),{x,y,w,h,valign:"middle",margin:0})}
+async function simSlides(pres,cx,id,stage,title){
+  const ss=await simShots(id);if(!ss.shots.length)return;
+  const link=hubLink((window.HUBAPP?HUBAPP.subKey:"")+"/sims/"+id);
+  const s=frame(pres,cx,{theme:"std",pill:stage+" | Simulation",title:title||("Simulation: "+ss.t),foot:"Run the live simulation from the hub for the full version.",notes:"Show the starting picture. Ask learners to predict what will happen when "+(ss.ctl||"the main control")+" is changed, then reveal the results on the next slide or run the live simulation from the link."});
+  drawFigs(s,[ss.shots[0]],MX,CY,8.2,CB-CY);
+  let yy=CY;const th=THEMES.std,sw=CW-8.5,sx=MX+8.5;
+  if(ss.ctl)yy+=sideBox(s,sx,yy,sw,"Predict","What will happen if we change "+ss.ctl+" from "+ss.lo+" to "+ss.hi+"? Write your prediction and a reason.",16,th)+0.2;
+  if(link){s.addShape("roundRect",{x:sx,y:yy,w:sw,h:1.1,fill:{color:C.MINT},line:{color:C.MINTLINE,width:1},rectRadius:0.08});
+    s.addText([{text:"LIVE VERSION",options:{fontFace:BF,fontSize:11,bold:true,color:C.ACC,breakLine:true}},{text:"Open this simulation in the hub",options:{fontFace:BF,fontSize:16,color:C.ACC,underline:{style:"sng"},hyperlink:{url:link,tooltip:"Opens the LOTS Hub"}}}],{x:sx+0.2,y:yy+0.1,w:sw-0.4,h:0.9,valign:"top",margin:0})}
+  if(ss.shots.length>=3){
+    const s2=frame(pres,cx,{theme:"std",pill:stage+" | Simulation",title:"Predict, then observe: "+(ss.ctl||ss.t),foot:"Click to show each result. Were your predictions right?",notes:"Click once for the low setting and again for the high setting. Ask learners to describe the difference and explain it with today’s key words."});
+    const gw=(CW-0.4)/2;
+    [1,2].forEach((j,n)=>{rv(s2,n+1);drawFigs(s2,[ss.shots[j]],MX+n*(gw+0.4),CY,gw,CB-CY-0.2)});rv(s2,0);
+  }
+}
+async function build4(pres,cx,l,u,SUB,M,secs){
+  const T=M.T,S=M.S,P=M.P,code=SUB.code||"";
+  /* ---- topic hook ---- */
+  if(M.th&&S.th!==false){
+    const th=M.th;let vis={figs:[]};
+    const ph=deskList("Notes/"+code+"/Topic "+u.n).concat(deskList("Notes/"+code+"/Topic"+u.n)).find(f=>/hook/i.test(f.name));
+    if(ph){const im=await loadImg(ph.url,ph.name);if(im)vis={figs:[im]}}
+    if(!vis.figs.length&&th[1])vis=await visualOf(th[1]);
+    const s=frame(pres,cx,{theme:"top",pill:"Topic hook | Topic "+u.n,title:"Why this topic matters",foot:"Click to reveal the picture, then ask the big question.",notes:"Topic hook. Reveal the picture with one click and let learners wonder for a minute before you read the big question. Collect a few ideas; you will return to them at the end of the topic."});
+    drawVisual(s,vis,MX,CY,7.4,CB-CY,1);
+    bigQ(s,th[0],MX+7.7,CY,CW-7.7,2.4,"B86F00");
+    if((th[4]||[]).length){const arr=[{text:"By the end of this topic you will be able to answer:",options:{fontFace:BF,fontSize:14,bold:true,color:C.MUTED,breakLine:true,paraSpaceAfter:4}}];th[4].forEach(q=>arr.push(...toRuns(runsOf(q,{}),{fontFace:BF,fontSize:14,color:C.INK},{bullet:true,paraSpaceAfter:3})));s.addText(arr,{x:MX+7.7,y:CY+2.55,w:CW-7.7,h:CB-CY-2.55,valign:"top",margin:0})}
+    if((th[2]||[]).length||(th[3]||[]).length){
+      const s2=frame(pres,cx,{theme:"top",pill:"Topic hook | Topic "+u.n,title:"Why we learn this",foot:"Click to show each reason.",notes:"Click to show each real-life reason. Ask learners for a fourth reason from their own lives."});
+      const n=Math.max(1,th[2].length),gw=(CW-0.3*(n-1))/n;
+      th[2].forEach((w,i)=>{rv(s2,i+1);const x=MX+i*(gw+0.3);s2.addShape("roundRect",{x,y:CY,w:gw,h:2.9,fill:{color:C.WHITE},line:{color:"F2D49B",width:1.25},rectRadius:0.1});
+        s2.addText([{text:plain(w[0]),options:{fontFace:HF,fontSize:20,bold:true,color:"B86F00",breakLine:true,paraSpaceAfter:6}}].concat(toRuns(runsOf(w[1],{}),{fontFace:BF,fontSize:16,color:C.INK})),{x:x+0.2,y:CY+0.15,w:gw-0.4,h:2.6,valign:"top",margin:0})});
+      rv(s2,0);
+      const ch=(th[3]||[]).map(nn=>(M.ctx.U.find(z=>String(z.n)===String(nn))||null)).filter(Boolean);
+      if(ch.length){rv(s2,n+1);s2.addText("Where it fits",{x:MX,y:CY+3.15,w:CW,h:0.35,fontFace:BF,fontSize:14,bold:true,color:C.MUTED,margin:0});
+        const cw=Math.min(3.0,(CW-0.35*(ch.length-1))/ch.length);
+        ch.forEach((z,i)=>{const x=MX+i*(cw+0.35),here=z===u;s2.addShape("roundRect",{x,y:CY+3.55,w:cw,h:1.1,fill:{color:here?C.ACC:C.WHITE},line:{color:here?C.ACC:C.LINE,width:1},rectRadius:0.08});
+          s2.addText(z.n+"  "+plain(z.name),{x:x+0.1,y:CY+3.55,w:cw-0.2,h:1.1,fontFace:BF,fontSize:13,bold:here,color:here?C.WHITE:C.INK,align:"center",valign:"middle",margin:0});
+          if(i<ch.length-1)s2.addText("→",{x:x+cw,y:CY+3.55,w:0.35,h:1.1,fontFace:BF,fontSize:20,color:C.MUTED,align:"center",valign:"middle",margin:0})});rv(s2,0)}
+    }
+  }
+  /* ---- lesson connector ---- */
+  if(M.conn&&S.conn!==false){
+    const c=M.conn;
+    const s=frame(pres,cx,{theme:"std",pill:"Lesson connector | "+c.m+" min",title:c.q,foot:"Links to "+plain(c.from)+".",notes:"Lesson connector (optional). Start a "+c.m+"-minute timer as learners come in. Take two or three answers and link them to today’s lesson."});
+    s.addShape("roundRect",{x:MX,y:CY,w:CW,h:CB-CY-0.3,fill:{color:"FFF7E6"},line:{color:"F2D49B",width:1.25,dashType:"dash"},rectRadius:0.1});
+    s.addShape("ellipse",{x:MX+0.3,y:CY+0.3,w:1.3,h:1.3,fill:{color:C.AMBER},line:{type:"none"}});
+    s.addText([{text:String(c.m),options:{fontFace:HF,fontSize:34,bold:true,color:C.DK,breakLine:true}},{text:"min",options:{fontFace:BF,fontSize:13,color:C.DK}}],{x:MX+0.3,y:CY+0.3,w:1.3,h:1.3,align:"center",valign:"middle",margin:0});
+    s.addText(toRuns(runsOf(c.task,{}),{fontFace:BF,fontSize:20,color:C.INK}),{x:MX+1.9,y:CY+0.3,w:CW-2.2,h:CB-CY-0.9,valign:"top",margin:0});
+  }
+  /* ---- hook ---- */
+  if(T){
+    let vis={figs:[]};
+    const ph=deskList("Notes/"+code+"/"+l.no).find(f=>/^hook\./i.test(f.name));
+    if(ph){const im=await loadImg(ph.url,ph.name);if(im)vis={figs:[im]}}
+    let v=M.hook.vis;
+    if(!vis.figs.length&&!v){const fg=secs.map(sc=>(sc.body.match(/\{\{(\w+)\}\}/)||[])[1]).find(k=>k&&typeof FIGS!=="undefined"&&FIGS[k]);
+      if(fg)v="fig:"+fg;else if(M.sims[0]&&M.simIn<0&&!M.acts.some(a=>a.sim===M.sims[0].id))v="sim:"+M.sims[0].id;else v="txt:"+plain(l.t)+"|What do you think this lesson is about?"}
+    if(!vis.figs.length)vis=await visualOf(v);
+    const s=frame(pres,cx,{theme:"std",pill:"Hook | "+P.hook+" min",title:"Big question",foot:"Click to reveal the picture.",notes:"Hook. Read the big question, then click to reveal the picture. Give learners a minute to think, then type or write their first ideas in the box. You will come back to them in the Summary."});
+    drawVisual(s,vis,MX,CY,7.6,CB-CY,1);
+    bigQ(s,M.hook.q,MX+7.9,CY,CW-7.9,2.2);
+    s.addShape("roundRect",{x:MX+7.9,y:CY+2.35,w:CW-7.9,h:CB-CY-2.35,fill:{color:C.WHITE},line:{color:C.MINTLINE,width:1,dashType:"dash"},rectRadius:0.08});
+    s.addText([{text:"OUR IDEAS NOW",options:{fontFace:BF,fontSize:11,bold:true,color:C.ACC,breakLine:true,paraSpaceAfter:6}},{text:S.ideas?String(S.ideas):" ",options:{fontFace:BF,fontSize:16,color:C.INK}}],{x:MX+8.05,y:CY+2.45,w:CW-8.2,h:CB-CY-2.55,valign:"top",margin:0});
+  }
+  /* ---- Explore ---- */
+  const A=M.act,AK=AKN();
+  if(A){
+    if(A.k==="sim"&&A.sim){await simSlides(pres,cx,A.sim,"Explore",A.t)}
+    else{
+      const th=THEMES.ibl,lw=8.2,sw=CW-lw-0.35,pill="Explore | "+(AK[A.k]||"Activity")+(A.o&&A.o.intl?" (international)":"")+" | "+A.m+" min";
+      const studyRuns=A.study?A.study.split(/\n+/).map(p=>runsOf(p,{})):[];
+      const studyH=studyRuns.length?0.3+studyRuns.reduce((a,r)=>a+lineCount(rtext(r),lw-0.4,16,false)*16*LH/72+0.08,0)+(A.src?0.35:0):0;
+      const items=A.st.map(x=>runsOf(x,{}));
+      const side=(s)=>{let yy=CY;yy+=sideBox(s,MX+lw+0.35,yy,sw,"Materials",A.mat.map(plain).join(" · "),15,th)+0.2;
+        yy+=sideBox(s,MX+lw+0.35,yy,sw,"Time","About "+A.m+" minutes",15,th)+0.2;
+        if(T&&A.roles){let r="Manager, Recorder, Timekeeper, Reporter";try{r=HUBSET.get().ibl.roles||r}catch(e){}yy+=sideBox(s,MX+lw+0.35,yy,sw,"Roles",r,14,th)+0.2}
+        if(A.safety)sideBox(s,MX+lw+0.35,yy,sw,"Safety",plain(A.safety),14,th)};
+      const notes="Explore activity ("+A.m+" min). Press Start activity in the hub to run the activity timer. Circulate and ask ‘What do you notice?’ and ‘What is your evidence?’. Keep the findings for Explain.";
+      if(studyRuns.length&&studyH>2.2){
+        const s=frame(pres,cx,{theme:"ibl",pill,title:A.t,foot:"Read the study carefully. Underline the evidence.",notes});
+        const arr=[];studyRuns.forEach(r=>arr.push(...toRuns(r,{fontFace:BF,fontSize:studyH>4.6?14:16,color:C.INK},{paraSpaceAfter:6})));
+        if(A.src)arr.push({text:"Source: "+plain(A.src),options:{fontFace:BF,fontSize:11,italic:true,color:C.MUTED}});
+        s.addShape("roundRect",{x:MX,y:CY,w:CW,h:CB-CY,fill:{color:"FFF7E6"},line:{color:"F2D49B",width:1},rectRadius:0.08});
+        s.addText(arr,{x:MX+0.25,y:CY+0.15,w:CW-0.5,h:CB-CY-0.3,valign:"top",margin:0});
+        const st={lead:[],items};const plan=stepPages(st,lw,CB-CY,[20,18,16,14]);
+        plan.pages.forEach((idx,pi)=>{const s2=frame(pres,cx,{theme:"ibl",pill,title:A.t+(pi?" (continued)":": questions"),foot:"Discuss in your group, then write your answers.",notes});drawSteps(s2,st,idx,MX,CY,lw,plan.fs,th,pi===0);if(!pi)side(s2)});
+      }else{
+        const st={lead:[],items};const plan=stepPages(st,lw,CB-CY-studyH,[20,18,16,14]);
+        plan.pages.forEach((idx,pi)=>{const s=frame(pres,cx,{theme:"ibl",pill,title:A.t+(pi?" (continued)":""),foot:A.src&&!studyRuns.length?"Source: "+plain(A.src):"Do the activity first, then check your findings in Explain.",notes});
+          let y=CY;if(!pi&&studyRuns.length){const arr=[];studyRuns.forEach(r=>arr.push(...toRuns(r,{fontFace:BF,fontSize:16,color:C.INK},{paraSpaceAfter:4})));if(A.src)arr.push({text:"Source: "+plain(A.src),options:{fontFace:BF,fontSize:11,italic:true,color:C.MUTED}});
+            s.addShape("roundRect",{x:MX,y,w:lw,h:studyH,fill:{color:"FFF7E6"},line:{color:"F2D49B",width:1},rectRadius:0.08});s.addText(arr,{x:MX+0.2,y:y+0.1,w:lw-0.4,h:studyH-0.2,valign:"top",margin:0});y+=studyH+0.15}
+          drawSteps(s,st,idx,MX,y,lw,plan.fs,th,pi===0);if(!pi)side(s)});
+      }
+      if(A.cards&&A.cards.length){const items2=A.cards.map((c,n)=>({n:n+1,a:runsOf(c[0],{b:1}),b:runsOf(c[1]||"",{})}));
+        const hFn=(it,fs,cw)=>lineCount(rtext(it.a)+" "+(A.o.pairs?"":rtext(it.b)),cw-0.3,fs,false)*fs*LH/72+0.35;
+        const plan=gridPlan(items2,3,CW,0.15,CB-CY,[16,14,13],hFn);
+        for(let pi=0;pi<plan.pages.length;pi++){const s=frame(pres,cx,{theme:"ibl",pill,title:"The cards"+(plan.pages.length>1?" ("+(pi+1)+"/"+plan.pages.length+")":""),foot:"Printed sets come from Print pack in the hub.",notes:"Use the printed card sets (Print pack in the hub). This slide lets you show the cards on the board."});
+          drawGrid(s,plan,pi,MX,CY,0.15,3,(sl,it,i,x,y,w,h,fs)=>{sl.addShape("roundRect",{x,y,w,h,fill:{color:C.WHITE},line:{color:C.PEACHLINE,width:1,dashType:"dash"},rectRadius:0.06});sl.addText(toRuns(it.a,{fontFace:BF,fontSize:fs,color:C.INK}),{x:x+0.12,y:y+0.08,w:w-0.24,h:h-0.16,align:"center",valign:"middle",margin:0})})}}
+      if(A.ans&&A.ans.length){
+        const s=frame(pres,cx,{theme:"ms",pill:"Explore | Answers",title:A.t+": answers",foot:"Click to show each answer.",notes:"Take answers from the groups first, then click to show each model answer."});
+        const n=A.ans.length,fs=n>5?15:17;let y=CY;
+        A.ans.forEach((a,i)=>{const r=runsOf(a,{});const hh=lineCount(rtext(r),CW-0.9,fs,false)*fs*LH/72+0.22;rv(s,i+1);
+          s.addShape("roundRect",{x:MX,y,w:CW,h:hh,fill:{color:C.WHITE},line:{color:C.PURLINE,width:1},rectRadius:0.06});
+          s.addText([{text:String(i+1)+".  ",options:{fontFace:BF,fontSize:fs,bold:true,color:C.PUR}}].concat(toRuns(r,{fontFace:BF,fontSize:fs,color:C.INK})),{x:MX+0.15,y:y+0.05,w:CW-0.3,h:hh-0.1,valign:"middle",margin:0});y+=hh+0.1});rv(s,0);
+      }
+    }
+  }
+  /* ---- question ladder ---- */
+  {
+    const s=frame(pres,cx,{theme:"std",pill:"Explain | Question ladder",title:"Steps to the big question",foot:"Each part of the lesson answers one step.",notes:"Show the ladder before the notes. Each guiding question is a step towards the big question; tick them off as you go."});
+    const n=M.parts.length,fs=n>7?14:n>5?16:18,step=Math.min(0.62,(CB-CY-0.9)/Math.max(1,n));
+    s.addShape("roundRect",{x:MX,y:CY,w:CW,h:0.75,fill:{color:C.ACC},line:{type:"none"},rectRadius:0.08});
+    s.addText(toRuns(runsOf("Big question: "+M.hook.q,{}),{fontFace:HF,fontSize:18,bold:true,color:C.WHITE}),{x:MX+0.2,y:CY,w:CW-0.4,h:0.75,valign:"middle",margin:0});
+    M.parts.slice().reverse().forEach((p,j)=>{const i=n-1-j,y=CY+0.9+j*step;
+      s.addShape("ellipse",{x:MX+0.1,y:y+0.06,w:0.42,h:0.42,fill:{color:p.s.ext?C.PUR:C.MINT},line:{color:C.ACC,width:1}});
+      s.addText(String(i+1),{x:MX+0.1,y:y+0.06,w:0.42,h:0.42,fontFace:BF,fontSize:13,bold:true,color:p.s.ext?C.WHITE:C.DK,align:"center",valign:"middle",margin:0});
+      s.addText(toRuns(runsOf(p.q,{}),{fontFace:BF,fontSize:fs,color:C.INK}),{x:MX+0.7,y,w:CW-0.7,h:step,valign:"middle",margin:0})});
+  }
+  /* ---- Explain parts ---- */
+  for(let si=0;si<M.parts.length;si++){
+    const p=M.parts[si],sc=secs[si]||p.s,fg=figsOf(sc.body),theme=sc.ext?"ext":"std";
+    const solo=fg.f.filter(k=>!FIGWIDE(k)),wide=fg.f.filter(k=>FIGWIDE(k));
+    const blocks=blocksOf(dom(F(fg.text)));
+    let soloFigs=[],wideFigs=[];
+    for(const k of solo)soloFigs.push(...await rasterFig(k));
+    for(const k of wide)wideFigs.push(...await rasterFig(k));
+    const lab=T?(TKN[p.tk]||"Task"):(TKN[p.tk]||"Task");
+    const taskRuns=[{t:lab+" · "+p.m+" min:  ",b:1}].concat(runsOf(p.txt,{}));
+    const tH=Math.min(1.2,Math.max(0.6,lineCount(rtext(taskRuns),CW-1.6,16,false)*16*LH/72+0.25));
+    const top=CY+tH+0.15,avail=CB-top;
+    const hasSide=soloFigs.length>0&&blocks.length>0,tw=hasSide?7.3:CW,fx=MX+7.6,fw=CW-7.6;
+    const ch=chooseFs(blocks,tw,avail-0.45,[20,18,17,16,15]);
+    let pages=blocks.length?ch.pages:[];
+    const total=Math.max(pages.length,1),queue=soloFigs.slice();
+    const pill="Explain | Part "+(si+1)+" of "+M.parts.length+(sc.ext?" | Extended":"");
+    for(let pi=0;pi<total;pi++){
+      const s=frame(pres,cx,{theme,pill,title:p.q,foot:pi?"(continued "+(pi+1)+"/"+total+")":"Do the task first, then click to show the explanation.",notes:"Guiding question: "+plain(p.q)+"  Task ("+p.m+" min): "+plain(p.txt)+"  Start the task timer in the hub (it starts when the part opens). Then click to reveal the explanation and ask learners to answer the guiding question in their own words."+(sc.ext?" Extended (Supplement) content.":"")});
+      if(!pi){s.addShape("roundRect",{x:MX,y:CY,w:CW,h:tH,fill:{color:"FFF7E6"},line:{color:C.AMBER,width:1,dashType:"dash"},rectRadius:0.08});
+        s.addText(String(p.m)+"′",{x:MX+0.15,y:CY,w:0.9,h:tH,fontFace:HF,fontSize:24,bold:true,color:"B86F00",align:"center",valign:"middle",margin:0});
+        s.addText(toRuns(taskRuns,{fontFace:BF,fontSize:16,color:C.INK}),{x:MX+1.1,y:CY+0.05,w:CW-1.3,h:tH-0.1,valign:"middle",margin:0});rv(s,1)}
+      const y0=pi?CY:top;
+      s.addText(toRuns(runsOf(sc.title,{b:1}),{fontFace:HF,fontSize:17,color:THEMES[theme].title}),{x:MX,y:y0,w:tw,h:0.4,valign:"middle",margin:0});
+      if(pages[pi])drawBlocks(s,pages[pi],MX,y0+0.45,tw,ch.fs,THEMES[theme]);
+      if(hasSide&&queue.length){const av=(pi?CB-CY:avail);const take=[];while(queue.length){const t=take.concat([queue[0]]);if(take.length&&stackHeight(t,fw)>av)break;take.push(queue.shift());if(stackHeight(take,fw)>av*1.3)break}drawFigs(s,take,fx,y0,fw,av)}
+      rv(s,0);
+    }
+    const rest=hasSide?queue:soloFigs;const figSlides=[];
+    for(let i=0;i<rest.length;i+=2)figSlides.push(rest.slice(i,i+2));wideFigs.forEach(f=>figSlides.push([f]));
+    figSlides.forEach(grp=>{const s=frame(pres,cx,{theme,pill,title:sc.title+" (diagram)",foot:"Part "+(si+1)+" of "+M.parts.length,notes:"Diagram slide. Ask learners to label or explain the diagram from memory first."});
+      const n=grp.length,gw=(CW-0.4*(n-1))/n;grp.forEach((f,j)=>drawFigs(s,[f],MX+j*(gw+0.4),CY,gw,CB-CY))});
+    if(M.simIn===si&&M.sims[0])await simSlides(pres,cx,M.sims[0].id,"Explain");
+    if(p.chk.length){
+      const s=frame(pres,cx,{theme:"qc",pill:"Explain | Quick check | Part "+(si+1),title:"Quick check",foot:"Answer on your whiteboard, then click to check.",notes:"Mini whiteboards up for each question, then click to reveal the answer."});
+      const n=p.chk.length,ch2=(CB-CY-0.2*(n-1))/n;
+      p.chk.forEach((c,i)=>{const y=CY+i*(ch2+0.2);let q=String(c[0]);if(!/[?.:]\s*$/.test(plain(q))&&plain(q).split(" ").length<=6)q="What is meant by “"+q+"”?";
+        s.addShape("roundRect",{x:MX,y,w:CW,h:ch2,fill:{color:C.MINT},line:{color:C.MINTLINE,width:1},rectRadius:0.08});
+        s.addText(toRuns([{t:(i+1)+".  ",b:1}].concat(runsOf(q,{})),{fontFace:BF,fontSize:20,color:C.INK}),{x:MX+0.2,y:y+0.1,w:CW-0.4,h:ch2*0.45,valign:"top",margin:0});
+        rv(s,i+1);s.addText(toRuns(runsOf(c[1],{}),{fontFace:BF,fontSize:18,bold:true,color:C.ACC}),{x:MX+0.6,y:y+ch2*0.5,w:CW-0.8,h:ch2*0.45,valign:"top",margin:0});rv(s,0)});
+    }
+  }
+  /* ---- your own pictures for this lesson (content folder) ---- */
+  {
+    const list=deskList("Notes/"+code+"/"+l.no).filter(f=>!/^hook\./i.test(f.name)).slice(0,12);
+    const imgs=[];for(const f of list){const im=await loadImg(f.url,f.name);if(im){im.cap=[{t:f.name.replace(/\.[a-z]+$/i,"")}];imgs.push(im)}}
+    for(let i=0;i<imgs.length;i+=2){const grp=imgs.slice(i,i+2);const s=frame(pres,cx,{theme:"std",pill:"Explain | Your pictures",title:"From your notes folder",foot:"Pictures from Notes/"+code+"/"+l.no,notes:"Pictures you added to this lesson’s notes folder."});
+      const n=grp.length,gw=(CW-0.4*(n-1))/n;grp.forEach((f,j)=>drawFigs(s,[f],MX+j*(gw+0.4),CY,gw,CB-CY))}
+  }
+  /* ---- Summary ---- */
+  {
+    const s=frame(pres,cx,{theme:"std",pill:"Summary | "+P.sum+" min",title:"Back to the big question",foot:"Click to show what we know now, then the key points.",notes:"Read the class’s first ideas, then click to show the answer and the key points. Ask: what changed in our thinking?"});
+    bigQ(s,M.hook.q,MX,CY,CW,0.8);
+    const bw=(CW-0.3)/2,y=CY+0.95,bh=1.75;
+    s.addShape("roundRect",{x:MX,y,w:bw,h:bh,fill:{color:C.WHITE},line:{color:C.LINE,width:1},rectRadius:0.08});
+    s.addText([{text:"WHAT WE THOUGHT AT THE START",options:{fontFace:BF,fontSize:11,bold:true,color:C.MUTED,breakLine:true,paraSpaceAfter:4}},{text:S.ideas?String(S.ideas):"(Read out the ideas from the Hook.)",options:{fontFace:BF,fontSize:15,color:C.INK}}],{x:MX+0.15,y:y+0.1,w:bw-0.3,h:bh-0.2,valign:"top",margin:0});
+    rv(s,1);s.addShape("roundRect",{x:MX+bw+0.3,y,w:bw,h:bh,fill:{color:C.MINT},line:{color:C.MINTLINE,width:1},rectRadius:0.08});
+    s.addText([{text:"WHAT WE KNOW NOW",options:{fontFace:BF,fontSize:11,bold:true,color:C.ACC,breakLine:true,paraSpaceAfter:4}}].concat(toRuns(runsOf(M.hook.ans,{}),{fontFace:BF,fontSize:lineCount(plain(M.hook.ans),bw-0.3,15,false)>5?13:15,color:C.INK})),{x:MX+bw+0.45,y:y+0.1,w:bw-0.3,h:bh-0.2,valign:"top",margin:0});
+    rv(s,2);const ky=y+bh+0.2,kh=CB-ky;const arr=[{text:"KEY POINTS",options:{fontFace:BF,fontSize:11,bold:true,color:C.ACC,breakLine:true,paraSpaceAfter:4}}];
+    const kfs=lineCount(M.sum.map(plain).join(" "),CW-0.6,15,false)>8?13:15;
+    M.sum.forEach(k=>arr.push(...toRuns(runsOf(k,{}),{fontFace:BF,fontSize:kfs,color:C.INK},{bullet:true,paraSpaceAfter:3})));
+    s.addShape("roundRect",{x:MX,y:ky,w:CW,h:kh,fill:{color:C.WHITE},line:{color:C.MINTLINE,width:1},rectRadius:0.08});
+    s.addText(arr,{x:MX+0.2,y:ky+0.1,w:CW-0.4,h:kh-0.2,valign:"top",margin:0});rv(s,0);
+    const s2=frame(pres,cx,{theme:"std",pill:"Summary",title:"Can you answer the question ladder?",foot:"Answer each question in one or two sentences.",notes:"Quick self-check: learners answer each ladder question. Anything they cannot answer goes on their exit ticket."});
+    const a2=[];const lfs=M.parts.length>7?15:18;M.parts.forEach((p,i)=>a2.push(...toRuns([{t:(i+1)+".  ",b:1}].concat(runsOf(p.q,{})),{fontFace:BF,fontSize:lfs,color:C.INK},{paraSpaceAfter:8})));
+    s2.addText(a2,{x:MX,y:CY,w:CW,h:CB-CY,valign:"top",margin:0});
+  }
+}
+function colourSlide(pres,cx){
+  const s=frame(pres,cx,{theme:"std",pill:"Reflect | Colour check",title:"How well did you understand today’s lesson?",foot:"Choose one colour for the whole lesson.",notes:"In the hub, use End lesson and check learners, then Project, so learners tap their name and their colour. Your list updates at the same time."});
+  [["23855A","Green","I understand and can explain it to someone else."],["D98A00","Amber","I partly understand or need some help."],["C9412B","Red","I don't understand this yet."]].forEach((r,i)=>{const y=CY+0.1+i*1.5;
+    s.addShape("roundRect",{x:MX,y,w:CW,h:1.25,fill:{color:C.WHITE},line:{color:C.LINE,width:1},rectRadius:0.1});
+    s.addShape("roundRect",{x:MX+0.2,y:y+0.17,w:2.2,h:0.9,fill:{color:r[0]},line:{type:"none"},rectRadius:0.1});
+    s.addText(r[1],{x:MX+0.2,y:y+0.17,w:2.2,h:0.9,fontFace:HF,fontSize:24,bold:true,color:C.WHITE,align:"center",valign:"middle",margin:0});
+    s.addText(r[2],{x:MX+2.7,y,w:CW-2.9,h:1.25,fontFace:BF,fontSize:24,color:C.INK,valign:"middle",margin:0})});
 }
 
 /* ---------- deck creation and output ---------- */
@@ -23520,7 +23801,7 @@ async function finish(pres){
   const buf=await pres.write({outputType:"arraybuffer"});
   const zip=await JSZip.loadAsync(buf);
   const names=Object.keys(zip.files).filter(n=>/^ppt\/(slides|notesSlides)\/[^/]+\.xml$/.test(n));
-  for(const n of names){const x=await zip.file(n).async("string");const y=fixXml(x);if(y!==x)zip.file(n,y)}
+  for(const n of names){const x=await zip.file(n).async("string");let y=fixXml(x);if(/^ppt\/slides\//.test(n))y=animXml(y);if(y!==x)zip.file(n,y)}
   return zip.generateAsync({type:"blob",compression:"DEFLATE",mimeType:"application/vnd.openxmlformats-officedocument.presentationml.presentation"});
 }
 const safe=s=>String(s).replace(/[\\/:*?"<>|~^]+/g,"").replace(/\s+/g," ").trim().slice(0,110);
@@ -23528,7 +23809,7 @@ function subjName(SUB){return SUB?((SUB.name||"")+" "+(SUB.code||"")).trim():"Le
 
 async function lesson(l,u,SUB){
   SUB=SUB||{};
-  for(const k in figCache)delete figCache[k];
+  for(const k in figCache)delete figCache[k];MISSING=[];
   const pres=newDeck(plain(l.t),SUB);
   await buildLesson(pres,l,u,SUB);
   const idx=Math.max(0,u.lessons.indexOf(l));
@@ -23537,7 +23818,7 @@ async function lesson(l,u,SUB){
 }
 async function topic(u,SUB){
   SUB=SUB||{};
-  for(const k in figCache)delete figCache[k];
+  for(const k in figCache)delete figCache[k];MISSING=[];
   const pres=newDeck(plain(u.name),SUB);
   // topic title slide
   {
@@ -23557,7 +23838,7 @@ async function topic(u,SUB){
   const data=await finish(pres);
   return{filename:safe(subjName(SUB)+" T"+u.n+" "+plain(u.name))+".pptx",data};
 }
-return{lesson,topic,_fixXml:fixXml};
+return{lesson,topic,_fixXml:fixXml,get missing(){return MISSING.slice()}};
 })();
 async function exportLessonPPTX(l,u,SUB){return PPX.lesson(l,u,SUB)}
 async function exportTopicPPTX(u,SUB){return PPX.topic(u,SUB)}
@@ -32960,9 +33241,10 @@ async function saveFile(name,data){
   try{if(window.claude&&claude.use){const d=await claude.use("downloads");if(d){await d.save({filename:name,data});return "saved"}}}catch(e){if(e&&e.code==="declined")return "declined"}
   try{const blob=data instanceof Blob?data:new Blob([data]);const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{a.remove();URL.revokeObjectURL(a.href)},1500);return "saved"}catch(e){return "failed"}
 }
+function alertBox(t){const d=document.createElement("div");d.className="x4annhint";d.style.cssText="top:auto;bottom:20px;pointer-events:auto;cursor:pointer;max-width:min(680px,92vw);font-size:14px;padding:12px 16px;border-radius:12px";d.textContent=t+" (tap to close)";d.onclick=()=>d.remove();document.body.appendChild(d);setTimeout(()=>d.remove(),15000)}
 async function runExport(btn,fn,label){
   const old=btn.textContent;btn.disabled=true;btn.textContent="Building PowerPoint…";
-  try{const r=await fn();const st=await saveFile(r.filename,r.data);btn.textContent=st==="saved"?"Saved ✓":st==="declined"?old:"Could not save";}
+  try{const r=await fn();const st=await saveFile(r.filename,r.data);btn.textContent=st==="saved"?"Saved ✓":st==="declined"?old:"Could not save";try{const miss=typeof PPX!=="undefined"?PPX.missing:[];if(miss.length&&st==="saved")alertBox(miss.length+" picture"+(miss.length>1?"s":"")+" could not be added to the PowerPoint ("+miss.slice(0,4).join(", ")+(miss.length>4?" …":"")+"). Open the hub from the LOTS Hub desktop shortcut (version 4.1 or newer) so pictures from your content folder can be included.")}catch(e){}}
   catch(e){console.error(e);btn.textContent="Export failed"}
   setTimeout(()=>{btn.textContent=old;btn.disabled=false},2500);
 }

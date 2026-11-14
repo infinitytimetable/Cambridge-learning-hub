@@ -1,15 +1,15 @@
 {
  "app": "LOTS Cambridge Learning Hub (Master, Windows)",
- "version": "4.0",
- "date": "2026-11-13",
+ "version": "4.1",
+ "date": "2026-11-14",
  "minSetup": "4.0",
- "notes": "New Explore & Explain stage for all 194 lessons, two-part clock, annotate bar, projectable colour check, print packs and 43 international case studies.",
+ "notes": "PowerPoint export rebuilt: follows the 4.0 lesson flow (topic hook, connector, hook, Explore, Explain parts with guiding questions and quick checks, Summary, colour check), click-to-reveal animations, pictures from your content folder, and simulation slides with an Open in the hub link.",
  "files": [
   {
    "name": "hub.html",
    "path": "dist/hub.html",
-   "sha256": "82f4682de2cf03c0afac3e3eb43c9da44f878e0683f907d3c50c1baffe0cbd12",
-   "size": 43903508
+   "sha256": "b3caf936d3b981e43117353bf6e15f3fb992b9ace83c2573261f8902ef7d4867",
+   "size": 43934549
   },
   {
    "name": "picker.html",
@@ -20,8 +20,8 @@
   {
    "name": "launch.ps1",
    "path": "dist/launch.ps1",
-   "sha256": "738562b79ad5fc6b8310c4570792c1fd8cba2e5d04920431700fbcae89a099ed",
-   "size": 4358
+   "sha256": "4d5e36f22788f452fcfceedd5a26e44db89f2bf3e85058b9836cb640a38bec8a",
+   "size": 4392
   },
   {
    "name": "launch.vbs",
