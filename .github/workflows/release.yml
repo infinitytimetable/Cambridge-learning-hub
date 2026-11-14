@@ -1,0 +1,25 @@
+name: Publish a release from the release-files branch
+on:
+  push:
+    branches: [release-files]
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release-files
+      - name: Join the parts and publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          source release.env
+          cat parts/part-* > "$ASSET"
+          echo "$SHA256  $ASSET" | sha256sum -c -
+          gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --yes 2>/dev/null || true
+          gh release create "$TAG" "$ASSET" --repo "$GITHUB_REPOSITORY" --target main --title "$TITLE" --notes-file notes.md --latest
+      - name: Remove the temporary branch
+        run: git push origin --delete release-files
