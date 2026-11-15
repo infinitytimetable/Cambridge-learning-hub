@@ -1,15 +1,15 @@
 {
  "app": "LOTS Cambridge Learning Hub (Master, Windows)",
  "version": "4.2",
- "date": "2026-11-14",
+ "date": "2026-11-15",
  "minSetup": "4.0",
  "notes": "Key terms before the success criteria (tap to check) and a Key terms PowerPoint slide; key words in the notes and the Glossary open their meaning with a link to the notes; Export notes (Learner handout or Teacher version, PDF or Word) with your school name and logo from Settings, diagrams, pictures and summary questions.",
  "files": [
   {
    "name": "hub.html",
    "path": "dist/hub.html",
-   "sha256": "268506e9033fc19797a1076cf460d68679abbc1874a8c67c2b064bc520175b14",
-   "size": 43958852
+   "sha256": "e8e931657362c41b3481505d9a44df1c8247a5205d15d7e4d9e12658750398fb",
+   "size": 43958939
   },
   {
    "name": "picker.html",
