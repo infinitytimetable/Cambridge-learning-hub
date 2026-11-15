@@ -19,16 +19,19 @@ async function open(pw,remember){
   go.disabled=true;m.textContent="Loading the hub… (the first time takes a while)";
   try{
     const r=await fetch(SLUG+".bin?v="+VER);if(!r.ok)throw new Error("net");
-    const buf=new Uint8Array(await r.arrayBuffer()),salt=buf.slice(0,16),iv=buf.slice(16,28),ct=buf.slice(28);
+    const buf=new Uint8Array(await r.arrayBuffer()),salt=buf.subarray(0,16),iv=buf.subarray(16,28),ct=buf.subarray(28);
     m.textContent="Unlocking…";
     const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveKey"]);
     const key=await crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:ITER,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["decrypt"]);
     let gz;try{gz=await crypto.subtle.decrypt({name:"AES-GCM",iv},key,ct)}catch(e){put(K,null);throw new Error("pw")}
     if(remember)put(K,pw);
     m.textContent="Opening…";
-    const html=await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
-    document.open();document.write(html);document.close();
-  }catch(e){go.disabled=false;m.textContent=e.message==="pw"?"That passcode is not right. Try again.":e.message==="net"?"Could not load the hub. Check your internet and try again.":"Sorry, the hub could not be opened on this browser."}
+    let rd;try{rd=new Blob([gz]).stream().pipeThrough(new DecompressionStream("gzip")).getReader()}catch(e){throw new Error("old")}
+    /* the hub is written in pieces, so the phone never holds one huge copy in memory */
+    const dec=new TextDecoder();let started=false;
+    for(;;){const {done,value}=await rd.read();if(done)break;if(!started){document.open();started=true}document.write(dec.decode(value,{stream:true}))}
+    document.write(dec.decode());document.close();
+  }catch(e){if(document.getElementById("m")){go.disabled=false;m.textContent=e.message==="pw"?"That passcode is not right. Try again.":e.message==="net"?"Could not load the hub. Check your internet and try again.":e.message==="old"?"Please update Chrome, then try again.":"Sorry, the hub could not be opened ("+(e&&e.name||"")+": "+(e&&e.message||e)+"). Close the app and try again."}else{document.body&&(document.body.innerHTML='<p style="padding:20px">The hub could not finish opening. Close the app and open it again.</p>')}}
 }
 document.getElementById("f").addEventListener("submit",e=>{e.preventDefault();open(document.getElementById("pw").value.trim(),document.getElementById("rem").checked)});
 const saved=get(K);if(saved)open(saved,true);
