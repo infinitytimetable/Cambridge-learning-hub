@@ -1,0 +1,35 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>LOTS Hub Teacher</title><meta name="robots" content="noindex,nofollow">
+<link rel="manifest" href="__SLUG__.webmanifest"><meta name="theme-color" content="#0b3b36"><link rel="icon" href="icons/teacher-192.png"><link rel="apple-touch-icon" href="icons/teacher-180.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
+<style>:root{color-scheme:light dark}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0b3b36;color:#fff;font:17px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:16px;box-sizing:border-box}
+.c{width:100%;max-width:380px;background:#12504a;border-radius:16px;padding:24px;box-shadow:0 10px 30px #0006}h1{margin:0 0 4px;font-size:24px}p{margin:6px 0 16px;color:#cfe6e2}
+input{width:100%;box-sizing:border-box;font:inherit;padding:12px 14px;border-radius:10px;border:2px solid #2e8b78;background:#0b3b36;color:#fff}
+button{margin-top:12px;width:100%;font:600 17px system-ui,sans-serif;padding:12px;border:0;border-radius:10px;background:#f2a93b;color:#1b1200;cursor:pointer}button:disabled{opacity:.6}
+label{display:flex;gap:8px;align-items:center;margin-top:12px;font-size:15px;color:#cfe6e2}label input{width:auto}#m{min-height:1.5em;margin:12px 0 0;color:#ffd84d;font-size:15px}</style></head>
+<body><form class="c" id="f" autocomplete="off"><h1>LOTS Teacher Hub</h1><p>For teachers only. Enter the staff passcode.</p>
+<input id="pw" type="password" inputmode="text" placeholder="Passcode" aria-label="Passcode" required>
+<label><input type="checkbox" id="rem" checked> Remember on this device</label>
+<button id="go">Open the hub</button><div id="m" role="status"></div></form>
+<script>
+"use strict";
+if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost"))navigator.serviceWorker.register("sw.js").catch(()=>{});
+const SLUG="__SLUG__",ITER=__ITER__,VER="__VER__",K="lots-teacher-pass",m=document.getElementById("m"),go=document.getElementById("go");
+const get=k=>{try{return localStorage.getItem(k)}catch(e){return null}},put=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}};
+async function open(pw,remember){
+  go.disabled=true;m.textContent="Loading the hub… (the first time takes a while)";
+  try{
+    const r=await fetch(SLUG+".bin?v="+VER);if(!r.ok)throw new Error("net");
+    const buf=new Uint8Array(await r.arrayBuffer()),salt=buf.slice(0,16),iv=buf.slice(16,28),ct=buf.slice(28);
+    m.textContent="Unlocking…";
+    const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveKey"]);
+    const key=await crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:ITER,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["decrypt"]);
+    let gz;try{gz=await crypto.subtle.decrypt({name:"AES-GCM",iv},key,ct)}catch(e){put(K,null);throw new Error("pw")}
+    if(remember)put(K,pw);
+    m.textContent="Opening…";
+    const html=await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
+    document.open();document.write(html);document.close();
+  }catch(e){go.disabled=false;m.textContent=e.message==="pw"?"That passcode is not right. Try again.":e.message==="net"?"Could not load the hub. Check your internet and try again.":"Sorry, the hub could not be opened on this browser."}
+}
+document.getElementById("f").addEventListener("submit",e=>{e.preventDefault();open(document.getElementById("pw").value.trim(),document.getElementById("rem").checked)});
+const saved=get(K);if(saved)open(saved,true);
+</script></body></html>

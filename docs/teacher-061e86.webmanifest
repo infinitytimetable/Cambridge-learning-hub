@@ -1,0 +1,38 @@
+{
+  "id": "./teacher-061e86.html",
+  "name": "LOTS Hub Teacher",
+  "short_name": "LOTS Teacher",
+  "description": "LOTS Cambridge Learning Hub: teacher (Master) hub",
+  "start_url": "./teacher-061e86.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#0b3b36",
+  "icons": [
+    {
+      "src": "icons/teacher-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/teacher-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/teacher-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/teacher-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
