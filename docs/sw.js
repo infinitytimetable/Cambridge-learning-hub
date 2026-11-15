@@ -1,6 +1,6 @@
 /* LOTS Cambridge Learning Hub: keeps the hubs on the device so they open offline.
    The saved copy opens first; a fresh copy is checked in the background and used next time. */
-const CACHE="lots-hub-v1";
+const CACHE="lots-hub-v2";
 self.addEventListener("install",e=>{self.skipWaiting()});
 self.addEventListener("activate",e=>{e.waitUntil((async()=>{for(const k of await caches.keys())if(k!==CACHE)await caches.delete(k);await self.clients.claim()})())});
 self.addEventListener("fetch",e=>{
