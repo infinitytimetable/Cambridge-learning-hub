@@ -792,6 +792,22 @@ body:has(.x4hdr) header.top{position:static}
 .gl-flash,.gl-mark{background:#ffe56a!important;color:#111!important;border-radius:4px;transition:background 1s}
 .gl-m{font:13px/1.35 var(--f-body,inherit);color:var(--muted);flex:1 1 140px}
 .nxrow{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0;background:var(--surface)}.nxrow>div:first-child{display:flex;flex-direction:column;gap:2px;flex:1 1 260px}
+/* phones: compact header with a Menu button */
+#mnbtn{display:none}
+@media (max-width:700px){
+  header.top{display:flex!important;flex-wrap:wrap;align-items:center;gap:6px 8px;padding-block:6px!important;min-height:0}
+  header.top #hclock{display:none!important}
+  header.top .logo{flex:1 0 calc(100% - 150px);min-width:0;order:0;zoom:.72}
+  header.top .logo>span:last-child{min-width:0;overflow:hidden}
+  header.top .logo b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+  header.top #mnbtn{display:inline-flex;align-items:center;gap:6px;order:1;flex:none;min-height:36px;height:36px;padding:0 12px;font-size:15px}
+  header.top .dsp-btn{display:none!important}
+  header.top.mopen .dsp-btn{display:inline-flex!important;align-items:center;order:2;min-height:34px;height:34px;padding:0 12px;font-size:14px}
+  header.top.mopen #pjbtn,header.top.mopen #dspbtn,header.top.mopen #theme{display:none!important}
+  header.top .nav{order:3;flex-basis:100%}
+  header.top .nav a{font-size:15px!important;padding:6px 12px!important;min-height:0!important}
+}
+@media (display-mode:standalone){#fsbtn{display:none!important}}
 </style>
 <script>if(location.protocol==="file:")document.write('<script src="content.js"><\/script>')</script>
 <div class="page">
@@ -23665,6 +23681,21 @@ function flash(root,term){if(!root||!term)return;const k=String(term).toLowerCas
 return{index,find,card,wrap,keyTermsHTML,bindKeyTerms,terms,pending,clearPending,flash,goNotes,close};
 })();
 window.GL=GL;
+
+/* ===== Phones: compact header, the buttons sit behind a Menu button ===== */
+(function(){
+  function init(){
+    const h=document.querySelector("header.top");if(!h||document.getElementById("mnbtn"))return;
+    const b=document.createElement("button");b.id="mnbtn";b.type="button";b.className="theme";b.setAttribute("aria-expanded","false");b.setAttribute("aria-label","Menu");
+    b.innerHTML='<span aria-hidden="true">☰</span> Menu';h.appendChild(b);
+    const set=o=>{h.classList.toggle("mopen",o);b.setAttribute("aria-expanded",String(o));b.firstChild.textContent=o?"✕":"☰"};
+    b.addEventListener("click",e=>{e.stopPropagation();set(!h.classList.contains("mopen"))});
+    h.addEventListener("click",e=>{if(e.target.closest(".dsp-btn"))setTimeout(()=>set(false),0)});
+    document.addEventListener("click",e=>{if(h.classList.contains("mopen")&&!h.contains(e.target))set(false)});
+    addEventListener("hashchange",()=>set(false));
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,0));else setTimeout(init,0);
+})();
 
 
 

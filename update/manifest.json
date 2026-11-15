@@ -1,15 +1,15 @@
 {
  "app": "LOTS Cambridge Learning Hub (Master, Windows)",
- "version": "4.2",
+ "version": "4.2.1",
  "date": "2026-11-15",
  "minSetup": "4.0",
- "notes": "Key terms before the success criteria (tap to check) and a Key terms PowerPoint slide; key words in the notes and the Glossary open their meaning with a link to the notes; Export notes (Learner handout or Teacher version, PDF or Word) with your school name and logo from Settings, diagrams, pictures and summary questions.",
+ "notes": "Phones: compact header with the buttons behind a Menu button; hubs can be installed as apps.",
  "files": [
   {
    "name": "hub.html",
    "path": "dist/hub.html",
-   "sha256": "e8e931657362c41b3481505d9a44df1c8247a5205d15d7e4d9e12658750398fb",
-   "size": 43958939
+   "sha256": "fc0ed1a0f2a6ca2eea7b50d4eacd69cfc5d4aa3a3b3f8f4e625554519e195d2c",
+   "size": 43961162
   },
   {
    "name": "picker.html",
