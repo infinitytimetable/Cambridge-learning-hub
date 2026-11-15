@@ -15,7 +15,7 @@ open(os.path.join(root,'docs',slug+'.bin'),'wb').write(salt+iv+ct)
 tpl=open(os.path.join(root,'tools','teacher_loader.html'),encoding='utf-8').read()
 out=tpl.replace('__SLUG__',slug).replace('__ITER__',str(ITER)).replace('__VER__',ver)
 open(os.path.join(root,'docs',slug+'.html'),'w',encoding='utf-8').write(out)
-man={"id":"./"+slug+".html","name":"LOTS Hub Teacher","short_name":"LOTS Teacher","description":"LOTS Cambridge Learning Hub: teacher (Master) hub","start_url":"./"+slug+".html","scope":"./","display":"standalone","orientation":"any","background_color":"#ffffff","theme_color":"#0b3b36",
+man={"id":"./"+slug+".html","name":"My Teaching Hub","short_name":"My Teaching Hub","description":"My Teaching Hub: the teacher (Master) hub","start_url":"./"+slug+".html","scope":"./","display":"standalone","orientation":"any","background_color":"#ffffff","theme_color":"#0b3b36",
  "icons":[{"src":"icons/teacher-192.png","sizes":"192x192","type":"image/png","purpose":"any"},{"src":"icons/teacher-512.png","sizes":"512x512","type":"image/png","purpose":"any"},{"src":"icons/teacher-192-maskable.png","sizes":"192x192","type":"image/png","purpose":"maskable"},{"src":"icons/teacher-512-maskable.png","sizes":"512x512","type":"image/png","purpose":"maskable"}]}
 open(os.path.join(root,'docs',slug+'.webmanifest'),'w').write(json.dumps(man,indent=2))
 print("ok",len(ct),ver)

@@ -1,8 +1,8 @@
 {
   "id": "./teacher-061e86.html",
-  "name": "LOTS Hub Teacher",
-  "short_name": "LOTS Teacher",
-  "description": "LOTS Cambridge Learning Hub: teacher (Master) hub",
+  "name": "My Teaching Hub",
+  "short_name": "My Teaching Hub",
+  "description": "My Teaching Hub: the teacher (Master) hub",
   "start_url": "./teacher-061e86.html",
   "scope": "./",
   "display": "standalone",
