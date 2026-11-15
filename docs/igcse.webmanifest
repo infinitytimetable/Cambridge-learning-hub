@@ -1,0 +1,18 @@
+{
+  "id": "./igcse.html",
+  "name": "LOTS Hub IGCSE",
+  "short_name": "LOTS IGCSE",
+  "description": "IGCSE Chemistry 0620 and Biology 0610: lessons, notes, practice and games",
+  "start_url": "./igcse.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#0a6c74",
+  "icons": [
+    {"src": "icons/igcse-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icons/igcse-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icons/igcse-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
+    {"src": "icons/igcse-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}

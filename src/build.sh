@@ -39,7 +39,12 @@ build_one(){
   {
     echo '<meta charset="utf-8">'
     echo "<title>$TITLE</title>"
+    echo '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
     echo '<meta name="claude:viewport-fit-sides" content="cover">'
+    if [ "$MODE" != master ]; then K=$MODE; C='#0a6c74'; [ "$MODE" = alevel ] && C='#5b3f9e'
+      echo "<link rel=\"manifest\" href=\"$K.webmanifest\"><meta name=\"theme-color\" content=\"$C\"><link rel=\"icon\" href=\"icons/$K-192.png\"><link rel=\"apple-touch-icon\" href=\"icons/$K-180.png\"><meta name=\"mobile-web-app-capable\" content=\"yes\"><meta name=\"apple-mobile-web-app-capable\" content=\"yes\">"
+      echo '<script>if((location.protocol==="https:"||location.hostname==="localhost")&&"serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));</script>'
+    fi
     echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caladea:wght@400;700&family=Carlito:wght@400;700&family=IBM+Plex+Mono:wght@400;500;600&family=Lexend:wght@400;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Nunito:wght@400;600;700;800&family=Merriweather:wght@400;700&family=Open+Sans:wght@400;600;700&display=swap">'
     echo '<style>'
     cat style.css x4.css
