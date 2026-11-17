@@ -277,6 +277,8 @@ function nxStdImg(src){return new Promise(r=>{if(!src)return r(null);const i=new
   if(/^data:image\/(png|jpe?g);/i.test(src)&&m===1)return r({dataUrl:src,w,h});
   try{const c=document.createElement("canvas");c.width=Math.max(1,Math.round(w*m));c.height=Math.max(1,Math.round(h*m));const g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,c.width,c.height);g.drawImage(i,0,0,c.width,c.height);
     const png=/^data:image\/(png|svg|gif)/i.test(src)||/\.(png|svg|gif)$/i.test(src);r({dataUrl:c.toDataURL(png?"image/png":"image/jpeg",0.9),w:c.width,h:c.height})}catch(e){r(null)}};i.onerror=()=>r(null);i.src=src})}
+/* picture width on the page: true size for diagrams cut from papers (data-in = width in inches), otherwise from the pixel size */
+const nxPct=(im,z)=>{const inch=parseFloat(im.getAttribute&&im.getAttribute("data-in"));if(inch)return Math.max(15,Math.min(85,Math.round(inch/6.3*100*0.85)));return Math.min(80,Math.max(25,Math.round(z.w/7.5)))};
 const nxInlineOnly=el=>[...el.childNodes].every(n=>n.nodeType===3||n.nodeType===8||(n.nodeType===1&&/^(B|I|EM|STRONG|SUB|SUP|SPAN|A|BR|SMALL|U|MARK|CODE|ABBR)$/.test(n.tagName)));
 function nxImgSize(src){return new Promise(r=>{const i=new Image();i.onload=()=>r({w:i.naturalWidth,h:i.naturalHeight});i.onerror=()=>r(null);i.src=src})}
 async function nxBlocks(root,out){
@@ -287,9 +289,10 @@ async function nxBlocks(root,out){
     else if(/^H[3-6]$/.test(t)){const x=nxInline(el).trim();if(x)out.push({t:"h",l:3,text:x})}
     else if(t==="TABLE"){const rows=[...el.querySelectorAll("tr")].map(r=>[...r.children].map(c=>nxInline(c).trim()));if(rows.length){const hd=el.querySelector("th")?rows.shift():null;out.push({t:"table",head:hd,rows,fontSize:9})}}
     else if(t==="svg"||t==="SVG"||el.querySelector&&el.querySelector(":scope > svg")&&!el.textContent.trim()){
-      try{const r=await HUBDOC.svgToPng(t.toLowerCase()==="svg"?el:el.querySelector("svg"),600);out.push({t:"img",dataUrl:r.dataUrl,w:r.w,h:r.h,widthPct:Math.min(100,Math.round(r.w/6.2))})}catch(e){}}
-    else if(t==="IMG"&&el.getAttribute("src")){const z=await nxStdImg(el.getAttribute("src"));if(z)out.push({t:"img",dataUrl:z.dataUrl,w:z.w,h:z.h,widthPct:Math.min(85,Math.max(30,Math.round(z.w/6.2))),caption:el.getAttribute("alt")||""})}
-    else if(t==="FIGURE"&&el.querySelector("img")&&!el.querySelector("svg")){const im=el.querySelector("img"),cap=el.querySelector("figcaption"),z=await nxStdImg(im.getAttribute("src")||"");if(z)out.push({t:"img",dataUrl:z.dataUrl,w:z.w,h:z.h,widthPct:Math.min(85,Math.max(30,Math.round(z.w/6.2))),caption:cap?nxInline(cap).trim():(im.getAttribute("alt")||"")})}
+      try{const sv=t.toLowerCase()==="svg"?el:el.querySelector("svg"),fw=parseFloat((el.style&&el.style.maxWidth)||(el.closest&&el.closest("figure")&&el.closest("figure").style.maxWidth)||"")||((sv.viewBox&&sv.viewBox.baseVal&&sv.viewBox.baseVal.width)||400);
+        const r=await HUBDOC.svgToPng(sv,600);out.push({t:"img",dataUrl:r.dataUrl,w:r.w,h:r.h,widthPct:Math.max(25,Math.min(70,Math.round(fw/7)))})}catch(e){}}
+    else if(t==="IMG"&&el.getAttribute("src")){const z=await nxStdImg(el.getAttribute("src"));if(z)out.push({t:"img",dataUrl:z.dataUrl,w:z.w,h:z.h,widthPct:nxPct(el,z),caption:/question paper/i.test(el.getAttribute("alt")||"")?"":(el.getAttribute("alt")||"")})}
+    else if(t==="FIGURE"&&el.querySelector("img")&&!el.querySelector("svg")){const im=el.querySelector("img"),cap=el.querySelector("figcaption"),z=await nxStdImg(im.getAttribute("src")||"");if(z)out.push({t:"img",dataUrl:z.dataUrl,w:z.w,h:z.h,widthPct:nxPct(im,z),caption:cap?nxInline(cap).trim():(/question paper/i.test(im.getAttribute("alt")||"")?"":(im.getAttribute("alt")||""))})}
     else if((t==="DIV"||t==="ASIDE"||t==="SECTION")&&nxInlineOnly(el)&&el.textContent.trim()){const fb=el.firstChild&&el.firstChild.nodeType===1&&/^(B|STRONG)$/.test(el.firstChild.tagName)?el.firstChild:null,c=el.cloneNode(true);if(fb)c.removeChild(c.firstChild);const tx=nxInline(c).trim(),title=fb?fb.textContent.trim():"";
       if(fb||/key|tip|note|warn|box|rem/.test(el.className||""))out.push({t:"box",tone:/warn|safe/.test(el.className||"")?"warn":"info",title,text:tx});else if(tx)out.push({t:"p",text:tx})}
     else if(el.children.length)await nxBlocks(el,out);
