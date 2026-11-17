@@ -806,6 +806,10 @@ body:has(.x4hdr) header.top{position:static}
   header.top .nav a{font-size:15px!important;padding:6px 12px!important;min-height:0!important}
 }
 @media (display-mode:standalone){#fsbtn{display:none!important}}
+.rqtree{border:1px solid var(--line);border-radius:12px;max-height:340px;overflow:auto;background:var(--surface)}
+.rqu{border-bottom:1px solid var(--line)}.rqu:last-child{border-bottom:0}
+.rqu>summary{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;cursor:pointer}
+.rqu>summary .set-chk{margin:0}.rql{display:flex;flex-direction:column;gap:2px;padding:0 12px 10px 34px}.rql .set-chk{margin:2px 0}
 </style>
 <script>if(location.protocol==="file:")document.write('<script src="content.js"><\/script>')</script>
 <div class="page">
@@ -30771,6 +30775,7 @@ const a=document.getElementById("app"),T=HUB.teacher;
 const S=(h,b)=>`<section class="card" style="margin:14px 0;padding:18px 22px"><h2 style="margin:0 0 8px">${h}</h2>${b}</section>`;
 a.innerHTML=`<div class="crumb"><a href="#">Home</a> / Help</div><h1 class="ltitle">Help</h1><p class="lsum">A quick guide to using the LOTS Cambridge Learning Hub in class.</p>
 ${S("Teaching a lesson",`<ol><li>Open <b>Topics</b>, choose a subject, then a topic and a lesson.</li><li>Each lesson follows five stages: <b>Engage, Explore &amp; Explain, Practise, Play, Reflect</b>. Use the stage buttons at the top to move between them.</li><li><b>Explain</b> holds the notes and diagrams, shown in parts so they are readable on the smart board. Use <b>Project</b> on a slide to show it full screen.</li><li>Use <b>Projector</b> and <b>Display</b> in the top bar to enlarge text and change the look for the classroom.</li><li>Use the two-part <b>clock</b> to time the lesson and each activity.</li></ol>`)}
+${S("Revision questions (4.3)",`<p>Open <b>Study tools → Revision questions</b>. Tick whole topics or open a topic to tick single lessons, choose how many multiple-choice and exam-style questions you want, give the paper a title and time, then download it as PDF or Word. Questions come first; the answers and mark scheme are at the end. Tick "A new random set each time" to get a different paper on every download. The school name and logo at the top can be changed right there.</p>`)}
 ${S("Key terms, glossary words and notes export (4.2)",`<ul><li><b>Key terms</b> appear in Engage, just before the success criteria. Learners say what each word means, then tap it to check. The exported PowerPoint has a matching slide where each meaning appears on a click.</li><li>In the notes, key words have a dotted underline. Tap one to see its meaning and the lesson it comes from. <b>Go to the notes</b> opens that lesson at the right part of Explain and highlights the word.</li><li>In <b>Study tools, Glossary</b>, tap any term for the same card.</li>${T?`<li><b>Export notes</b> (next to Export PowerPoint) makes a <b>Learner handout</b> or a <b>Teacher version</b> as PDF or Word. Both have the key terms, the notes with their diagrams and pictures, and summary questions at the end. The teacher version adds the hook, guiding questions, tasks, the chosen Explore activity and the answers. The school name and logo on the top come from <b>Settings</b> (Teacher, and Assessments: School logo).</li>`:`<li>The <b>Download these notes</b> buttons at the end of Explain now include the diagrams and pictures.</li>`}</ul>`)}
 ${S("The Explore and Explain stage (4.0)",`<ul>${T?`<li>The slim bar at the top shows the stages and the sections of this stage with their minutes: <b>Topic hook</b> (first lesson of a topic), <b>Connector</b>, <b>Hook</b>, <b>Explore</b>, <b>Explain</b> and <b>Summary</b>. <b>Lesson options ⋯</b> sets a single (40) or double (80) period and shows or hides the topic hook. Every time is editable.</li><li><b>Hook</b>: tap to reveal the picture, then ask the big question and type the class’s first ideas. They come back in the Summary. To use your own photo, put a file called <b>Hook.jpg</b> (or .png) in the lesson’s notes folder, for example <b>Notes/0610/3.2</b>; for a topic hook use <b>Notes/0610/Topic 3/Hook.jpg</b>.</li><li><b>Explore</b>: the hub chooses an activity; tap a chip to swap. <b>Start activity</b> starts the activity timer. <b>Print pack</b> makes PDF or Word packs for the class you choose (cards with set letters, role cards, task sheets and an answer key).</li><li><b>Explain</b>: each part has a guiding question and a short task whose timer starts when the part opens. The notes stay covered until <b>Show the explanation</b>. The <b>question ladder</b> on the right (a progress bar on tablets and phones) ticks off as you go.</li><li>The <b>clock</b> has two parts: the lesson (teal) counts down to the end of the period from your timetable, and the activity (amber). Drag it with ⠿, shrink it with –, or tap it for more controls.</li><li><b>End lesson and check learners</b> (Teaching Mode) shows the colour key. <b>Project</b> puts the names on the board so learners tap their name, then a colour; your list updates at the same time.</li>`:`<li>Each lesson starts with a <b>lesson connector</b> that links to the last lesson.</li><li><b>Explore</b> gives an activity you can do on your own.</li><li><b>Explain</b> is in parts. Read the guiding question, try the task, then tap <b>Show the explanation</b> and answer the quick check.</li>`}<li>The <b>✎</b> button on the left opens the annotate bar: pens, highlighter, eraser, sizes, a see-through or white layer, undo, clear and 💾 to save a picture.</li></ul>`)}
 ${S("What each tab does",`<ul><li><b>Topics</b> – all lessons by topic.</li><li><b>Flashcards</b> and <b>Exam questions</b> – revision and past-paper style questions.</li>${T?`<li><b>Lesson plans</b> – build a plan for any lesson (single 40 min or double 80 min period) and export it.</li><li><b>Assessments</b> – build bi-weekly tests, formative and summative papers with a marking scheme.</li><li><b>Overviews</b> – plan the semester week by week: pick a topic, its syllabus objectives are added, tick what was covered, and unticked objectives move to the next week with their topic and sub-topic.</li><li><b>Study packs</b> – printable revision packs.</li><li><b>Learner progress</b> – class progress and reports.</li>`:""}<li><b>Practicals</b>, <b>Games</b> and <b>Jokes</b> – hands-on work and a lighter break.</li></ul>`)}
@@ -33382,7 +33387,7 @@ function useSubject(k){
   document.documentElement.setAttribute("data-sub",k);
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
-window.HUBAPP={prep,states,get subKey(){return subKey},plain,F,saveFile:(n,d)=>saveFile(n,d)};
+window.HUBAPP={prep,states,get subKey(){return subKey},plain,F,saveFile:(n,d)=>saveFile(n,d),nxBlocks:(r,o)=>nxBlocks(r,o),nxInline:n=>nxInline(n),nxStdImg:s=>nxStdImg(s)};
 let THEME="";try{THEME=localStorage.getItem("hubtheme")||""}catch(e){}
 if(!THEME){prep(HUB.subs[0]);THEME=states[HUB.subs[0]].theme||""}
 if(THEME)document.documentElement.setAttribute("data-theme",THEME);
@@ -35520,7 +35525,7 @@ function buildCodeObj(){
 /* ---------- overlay ---------- */
 let OVL=null,TAB="";
 function tabsList(){
-  const t=[["gloss","Glossary"],["sheet","Revision sheets"],["exam","Exam countdown"]];
+  const t=[["gloss","Glossary"],["sheet","Revision sheets"],["revq","Revision questions"],["exam","Exam countdown"]];
   if(!isT)t.unshift(["pts","Points and streak"]),t.push(["miss","My mistakes"],["paper","Past papers"],["code","Progress code"]);
   else t.push(["class","Learner codes"]);
   t.push(["off","Offline and install"]);return t;
@@ -35537,7 +35542,7 @@ function paint(){
 <div class="tl-tabs" role="tablist">${tabsList().map(t=>`<button class="btn" role="tab" data-t="${t[0]}" aria-selected="${TAB===t[0]}" type="button">${t[1]}</button>`).join("")}</div><div class="set-card" id="tlbody"></div></div>`;
   $("#tlx",OVL).onclick=closeTools;
   $$("[data-t]",OVL).forEach(b=>b.onclick=()=>{TAB=b.dataset.t;paint()});
-  const body=$("#tlbody",OVL);({gloss,sheet,exam,pts,miss,paper,code,class:klass,off}[TAB]||gloss)(body);
+  const body=$("#tlbody",OVL);({gloss,sheet,revq,exam,pts,miss,paper,code,class:klass,off}[TAB]||gloss)(body);
 }
 function subPick(body,cb,cur){
   if(subs().length<2)return subs()[0];
@@ -35567,6 +35572,120 @@ function sheet(body){
   $$("[data-f]",d).forEach(b=>b.onclick=()=>{const u=SUBJ[SK].units.find(x=>String(x.n)===$("#shu",d).value);if(!u)return;
     if(b.dataset.f==="print"){const w=window.open("","_blank");if(w){w.document.write(sheetHTML(SK,u));w.document.close()}else $("#shm",d).textContent="Pop-ups are blocked. Use PDF instead."}
     else sheetExport(SK,u,b.dataset.f,$("#shm",d))});
+}
+
+/* ---------- revision questions: pick topics or lessons, export a paper with the answers at the end ---------- */
+const RQ={sub:null,sel:{},mcq:10,pp:5,shuf:true,title:"",time:""};
+const RQSTOP=new Set("the and for with from into that this what which their there these those about using use uses used how why when where are was were its it's also more most some other than then each such between within without".split(" "));
+const RQMAP={};
+/* exam questions are stored per topic; find the lesson each one fits best from its words */
+function rqLessonOf(k,u){
+  const key=k+":"+u.n;if(RQMAP[key])return RQMAP[key];
+  const L=u.lessons.map(l=>{const tw=plain(l.t).toLowerCase().split(/[^a-z0-9]+/).filter(w=>w.length>3&&!RQSTOP.has(w));
+    const terms=(window.GL?GL.terms(l):[]).map(x=>plain(x[0]).toLowerCase()).filter(x=>x.length>2);return{tw,terms}});
+  const pick=txt=>{const s=" "+plain(txt).toLowerCase()+" ";let best=0,bs=0;
+    L.forEach((x,i)=>{let sc=0;x.terms.forEach(t=>{if(s.includes(t))sc+=3});x.tw.forEach(w=>{if(s.includes(w))sc+=1});if(sc>bs){bs=sc;best=i}});return best};
+  return(RQMAP[key]={pp:(u.pp||[]).map(q=>pick(q.title+" "+q.q)),quiz:(u.quiz||[]).map(q=>pick(q.q+" "+(q.o||[]).join(" ")))});
+}
+function rqPool(k){
+  const P={mcq:[],pp:[]};
+  SUBJ[k].units.forEach(u=>{const s=RQ.sel[u.n];if(!s||!s.size)return;const m=rqLessonOf(k,u);
+    (u.quiz||[]).forEach((q,i)=>{if(s.has(m.quiz[i]))P.mcq.push({u,q})});
+    (u.pp||[]).forEach((q,i)=>{if(s.has(m.pp[i]))P.pp.push({u,q})})});
+  return P;
+}
+const rqShuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const rqTake=(a,n)=>{const x=RQ.shuf?rqShuffle(a):a;return n==="all"?x:x.slice(0,+n)};
+const rqMarks=q=>parseInt(q.marks,10)||0;
+function revq(body){
+  const H=A();RQ.sub=RQ.sub||H.subKey;try{H.prep(RQ.sub)}catch(e){}
+  const k=RQ.sub,U=SUBJ[k].units.filter(u=>u.lessons.length&&((u.pp||[]).length||(u.quiz||[]).length));
+  const S=window.HUBSET?HUBSET.get():{teacher:{},assess:{}};
+  body.innerHTML=`<h2>Revision questions</h2><p class="meta">Choose topics or single lessons, how many questions of each kind, then download a revision paper. The answers and mark scheme come at the end.</p>`;
+  subPick(body,v=>{RQ.sub=v;RQ.sel={};revq(body)},k);
+  const d=document.createElement("div");
+  d.innerHTML=`<h3 style="margin:14px 0 6px">1. Topics and lessons</h3>
+<div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:8px"><button class="btn sm" type="button" id="rqall">Select all</button><button class="btn sm" type="button" id="rqnone">Clear</button></div>
+<div id="rqtree" class="rqtree">${U.map(u=>`<details class="rqu"><summary><label class="set-chk"><input type="checkbox" data-u="${u.n}"> ${u.n}. ${esc(plain(u.name))}</label> <span class="meta">${(u.quiz||[]).length} MC · ${(u.pp||[]).length} exam-style</span></summary>
+<div class="rql">${u.lessons.map((l,i)=>`<label class="set-chk"><input type="checkbox" data-u="${u.n}" data-l="${i}"> ${esc(l.no||u.n+"."+(i+1))} ${esc(plain(l.t))}</label>`).join("")}</div></details>`).join("")}</div>
+<h3 style="margin:16px 0 6px">2. Questions</h3>
+<div class="set-grid"><label>Multiple choice<select id="rqm">${[0,5,10,15,20,30,40,"all"].map(n=>`<option value="${n}" ${String(n)===String(RQ.mcq)?"selected":""}>${n==="all"?"All":n}</option>`).join("")}</select></label>
+<label>Exam-style (structured)<select id="rqp">${[0,2,3,5,8,10,15,20,"all"].map(n=>`<option value="${n}" ${String(n)===String(RQ.pp)?"selected":""}>${n==="all"?"All":n}</option>`).join("")}</select></label></div>
+<label class="set-chk" style="margin-top:8px"><input type="checkbox" id="rqs" ${RQ.shuf?"checked":""}> A new random set each time (untick to keep syllabus order)</label>
+<h3 style="margin:16px 0 6px">3. Paper details</h3>
+<div class="set-grid"><label>Title<input type="text" id="rqt" maxlength="80" placeholder="Revision questions" value="${esc(RQ.title)}"></label>
+<label>Time allowed (optional)<input type="text" id="rqtm" maxlength="30" placeholder="e.g. 1 hour" value="${esc(RQ.time)}"></label>
+<label>School name (top of the paper)<input type="text" id="rqsc" maxlength="80" value="${esc((S.teacher&&S.teacher.school)||"")}"></label>
+<div><span class="meta">School logo</span><div class="row" style="gap:8px;align-items:center;margin-top:4px"><img id="rqlg" alt="School logo" style="height:42px;max-width:90px;object-fit:contain;background:#fff;border-radius:6px;padding:2px" src="${(S.assess&&S.assess.logo)||(typeof ASSESS_LOGO!=="undefined"?ASSESS_LOGO:"")}"><button class="btn sm" type="button" id="rqlb">Change logo</button><input type="file" id="rqlf" accept="image/*" hidden></div></div></div>
+<p class="meta" id="rqsum" role="status" style="margin-top:12px"></p>
+<div class="row" style="gap:8px;flex-wrap:wrap;margin-top:6px"><button class="btn pri" type="button" data-rf="pdf">Download PDF</button><button class="btn" type="button" data-rf="docx">Download Word</button><span class="meta" id="rqmsg" role="status"></span></div>`;
+  body.appendChild(d);
+  const tree=$("#rqtree",d);
+  const paintChecks=()=>{U.forEach(u=>{const s=RQ.sel[u.n]||new Set();const lbs=$$(`input[data-u="${u.n}"][data-l]`,tree);lbs.forEach(c=>c.checked=s.has(+c.dataset.l));
+    const top=$(`input[data-u="${u.n}"]:not([data-l])`,tree);top.checked=s.size===u.lessons.length&&s.size>0;top.indeterminate=s.size>0&&s.size<u.lessons.length});summary()};
+  const summary=()=>{const P=rqPool(k),nm=RQ.mcq==="all"?P.mcq.length:Math.min(+RQ.mcq,P.mcq.length),np=RQ.pp==="all"?P.pp.length:Math.min(+RQ.pp,P.pp.length);
+    const nt=Object.values(RQ.sel).reduce((a,s)=>a+(s&&s.size?1:0),0);
+    $("#rqsum",d).textContent=nt?`${nt} topic(s) chosen: ${P.mcq.length} multiple choice and ${P.pp.length} exam-style questions available. This paper will have ${nm} multiple choice and ${np} exam-style questions.`:"Choose at least one topic or lesson."};
+  tree.addEventListener("change",e=>{const c=e.target;if(!c.dataset.u)return;const u=U.find(x=>String(x.n)===c.dataset.u);const s=RQ.sel[u.n]||(RQ.sel[u.n]=new Set());
+    if(c.dataset.l==null){s.clear();if(c.checked)u.lessons.forEach((l,i)=>s.add(i))}else{c.checked?s.add(+c.dataset.l):s.delete(+c.dataset.l)}paintChecks()});
+  tree.addEventListener("click",e=>{if(e.target.closest("summary label"))e.stopPropagation()});
+  $("#rqall",d).onclick=()=>{U.forEach(u=>RQ.sel[u.n]=new Set(u.lessons.map((l,i)=>i)));paintChecks()};
+  $("#rqnone",d).onclick=()=>{RQ.sel={};paintChecks()};
+  $("#rqm",d).onchange=e=>{RQ.mcq=e.target.value;summary()};$("#rqp",d).onchange=e=>{RQ.pp=e.target.value;summary()};
+  $("#rqs",d).onchange=e=>RQ.shuf=e.target.checked;$("#rqt",d).oninput=e=>RQ.title=e.target.value;$("#rqtm",d).oninput=e=>RQ.time=e.target.value;
+  $("#rqsc",d).onchange=e=>{if(window.HUBSET){const s=HUBSET.get();s.teacher=s.teacher||{};s.teacher.school=e.target.value.trim();HUBSET.save()}};
+  $("#rqlb",d).onclick=()=>$("#rqlf",d).click();
+  $("#rqlf",d).onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{const z=await H.nxStdImg(r.result);if(!z)return;
+    const c=document.createElement("canvas"),m=Math.min(1,300/Math.max(z.w,z.h));c.width=Math.round(z.w*m);c.height=Math.round(z.h*m);const im=new Image();im.onload=()=>{c.getContext("2d").drawImage(im,0,0,c.width,c.height);const u=c.toDataURL("image/png");
+      $("#rqlg",d).src=u;if(window.HUBSET){const s=HUBSET.get();s.assess=s.assess||{};s.assess.logo=u;HUBSET.save()}};im.src=z.dataUrl};r.readAsDataURL(f)};
+  $$("[data-rf]",d).forEach(b=>b.onclick=async()=>{const msg=$("#rqmsg",d);const P=rqPool(k);
+    if(!P.mcq.length&&!P.pp.length){msg.textContent="Choose at least one topic or lesson first.";return}
+    const M=rqTake(P.mcq,RQ.mcq),Q=rqTake(P.pp,RQ.pp);if(!M.length&&!Q.length){msg.textContent="Set the number of questions above zero.";return}
+    $$("[data-rf]",d).forEach(x=>x.disabled=true);msg.textContent="Building the paper…";
+    try{const r=await rqExport(k,M,Q,b.dataset.rf,$("#rqsc",d).value.trim(),$("#rqlg",d).src);msg.textContent=r==="saved"?"Saved. Check your Downloads folder.":r==="declined"?"":"Could not save the file."}
+    catch(e){console.error(e);msg.textContent="Sorry, the paper could not be built."}
+    $$("[data-rf]",d).forEach(x=>x.disabled=false)});
+  paintChecks();
+}
+async function rqExport(k,M,Q,fmt,school,logo){
+  const H=A(),sb=SUBJ[k],B=[];
+  const rich=async html=>{const x=document.createElement("div");x.innerHTML=H.F(String(html||""));return H.nxInline(x).trim()};
+  const topics=[...new Set([...M,...Q].map(x=>x.u.n))].sort((a,b)=>a-b);
+  const total=M.length+Q.reduce((a,x)=>a+rqMarks(x.q),0);
+  const title=RQ.title.trim()||"Revision questions";
+  if(logo){const z=await H.nxStdImg(logo);if(z)B.push({t:"img",dataUrl:z.dataUrl,w:z.w,h:z.h,widthPct:Math.round(Math.min(16,16*z.w/z.h))})}
+  if(school)B.push({t:"p",text:school,bold:true,size:15,align:"center",after:20});
+  B.push({t:"p",text:sb.title,size:10,color:"555555",align:"center"});
+  B.push({t:"band",text:title});
+  B.push({t:"p",text:"Name: ________________________________   Class: ____________   Date: ____________",size:10});
+  const kv=[["Topics",topics.map(n=>{const u=sb.units.find(x=>x.n===n);return n+". "+plain(u.name)}).join("; ")],["Total marks",String(total)]];if(RQ.time.trim())kv.splice(1,0,["Time allowed",RQ.time.trim()]);
+  B.push({t:"kv",pairs:kv});
+  B.push({t:"p",text:"Answer all questions. Write your answers in the spaces provided. The marks for each question are shown in brackets [ ].",italic:true,size:10});
+  let n=0;
+  if(M.length){B.push({t:"h",l:2,text:`Section A: Multiple choice (${M.length} mark${M.length>1?"s":""})`});
+    if(M.some(x=>x.q.t==="mcq"))B.push({t:"p",text:"For each question, circle the letter of the correct answer.",size:10,color:"555555"});
+    for(const x of M){n++;B.push({t:"q",label:String(n),text:await rich(x.q.q),marks:1});
+      if(x.q.t==="mcq"&&x.q.o)for(let i=0;i<x.q.o.length;i++)B.push({t:"q",lvl:1,label:"ABCDEFG"[i],text:await rich(x.q.o[i])});
+      else B.push({t:"lines",n:2})}}
+  if(Q.length){B.push({t:"h",l:2,text:"Section B: Exam-style questions ("+Q.reduce((a,x)=>a+rqMarks(x.q),0)+" marks)"});
+    for(const x of Q){n++;B.push({t:"q",label:String(n),text:"**"+plain(x.q.title)+"**",marks:rqMarks(x.q)});
+      const div=document.createElement("div");div.innerHTML=H.F(String(x.q.q||""));await H.nxBlocks(div,B);
+      B.push({t:"lines",n:Math.min(14,Math.max(3,rqMarks(x.q)+1))})}}
+  /* answers */
+  B.push({t:"pb"});B.push({t:"h",l:2,text:"Answers and mark scheme"});
+  n=0;
+  if(M.length){B.push({t:"h",l:3,text:"Section A"});
+    const rows=[];for(const x of M){n++;const q=x.q;let ans;
+      if(q.t==="mcq")ans="ABCDEFG"[q.a]+"  "+plain(q.o[q.a]);else if(q.t==="num")ans=plain(String(q.a))+(q.u?" "+plain(q.u):"");else ans=Array.isArray(q.a)?q.a.map(plain).join(" / "):plain(String(q.a));
+      rows.push([String(n),ans,plain(q.e||"")])}
+    B.push({t:"table",head:["No.","Answer","Why"],rows,widths:[8,37,55],fontSize:9})}
+  if(Q.length){B.push({t:"h",l:3,text:"Section B"});
+    for(const x of Q){n++;B.push({t:"p",text:`**${n}. ${plain(x.q.title)}**  [${rqMarks(x.q)}]`});
+      const ms=Array.isArray(x.q.ms)?x.q.ms:String(x.q.ms||"").split(/\n+/);B.push({t:"ul",items:await Promise.all(ms.filter(Boolean).map(rich))})}}
+  const model={title:"",meta:title,footer:`${school?school+" | ":""}${sb.title} | ${title}`,blocks:B};
+  const fn=(title+" - "+sb.code+" topics "+topics.join(",")).replace(/[^\w .,-]+/g,"").slice(0,90);
+  const data=fmt==="docx"?await HUBDOC.docx(model):await HUBDOC.pdf(model);
+  return await H.saveFile(fn+"."+fmt,data);
 }
 function exam(body){
   const ex=EXAMS().sort((a,b)=>a.date<b.date?-1:1);

@@ -121,7 +121,7 @@ function buildCodeObj(){
 /* ---------- overlay ---------- */
 let OVL=null,TAB="";
 function tabsList(){
-  const t=[["gloss","Glossary"],["sheet","Revision sheets"],["exam","Exam countdown"]];
+  const t=[["gloss","Glossary"],["sheet","Revision sheets"],["revq","Revision questions"],["exam","Exam countdown"]];
   if(!isT)t.unshift(["pts","Points and streak"]),t.push(["miss","My mistakes"],["paper","Past papers"],["code","Progress code"]);
   else t.push(["class","Learner codes"]);
   t.push(["off","Offline and install"]);return t;
@@ -138,7 +138,7 @@ function paint(){
 <div class="tl-tabs" role="tablist">${tabsList().map(t=>`<button class="btn" role="tab" data-t="${t[0]}" aria-selected="${TAB===t[0]}" type="button">${t[1]}</button>`).join("")}</div><div class="set-card" id="tlbody"></div></div>`;
   $("#tlx",OVL).onclick=closeTools;
   $$("[data-t]",OVL).forEach(b=>b.onclick=()=>{TAB=b.dataset.t;paint()});
-  const body=$("#tlbody",OVL);({gloss,sheet,exam,pts,miss,paper,code,class:klass,off}[TAB]||gloss)(body);
+  const body=$("#tlbody",OVL);({gloss,sheet,revq,exam,pts,miss,paper,code,class:klass,off}[TAB]||gloss)(body);
 }
 function subPick(body,cb,cur){
   if(subs().length<2)return subs()[0];
@@ -168,6 +168,120 @@ function sheet(body){
   $$("[data-f]",d).forEach(b=>b.onclick=()=>{const u=SUBJ[SK].units.find(x=>String(x.n)===$("#shu",d).value);if(!u)return;
     if(b.dataset.f==="print"){const w=window.open("","_blank");if(w){w.document.write(sheetHTML(SK,u));w.document.close()}else $("#shm",d).textContent="Pop-ups are blocked. Use PDF instead."}
     else sheetExport(SK,u,b.dataset.f,$("#shm",d))});
+}
+
+/* ---------- revision questions: pick topics or lessons, export a paper with the answers at the end ---------- */
+const RQ={sub:null,sel:{},mcq:10,pp:5,shuf:true,title:"",time:""};
+const RQSTOP=new Set("the and for with from into that this what which their there these those about using use uses used how why when where are was were its it's also more most some other than then each such between within without".split(" "));
+const RQMAP={};
+/* exam questions are stored per topic; find the lesson each one fits best from its words */
+function rqLessonOf(k,u){
+  const key=k+":"+u.n;if(RQMAP[key])return RQMAP[key];
+  const L=u.lessons.map(l=>{const tw=plain(l.t).toLowerCase().split(/[^a-z0-9]+/).filter(w=>w.length>3&&!RQSTOP.has(w));
+    const terms=(window.GL?GL.terms(l):[]).map(x=>plain(x[0]).toLowerCase()).filter(x=>x.length>2);return{tw,terms}});
+  const pick=txt=>{const s=" "+plain(txt).toLowerCase()+" ";let best=0,bs=0;
+    L.forEach((x,i)=>{let sc=0;x.terms.forEach(t=>{if(s.includes(t))sc+=3});x.tw.forEach(w=>{if(s.includes(w))sc+=1});if(sc>bs){bs=sc;best=i}});return best};
+  return(RQMAP[key]={pp:(u.pp||[]).map(q=>pick(q.title+" "+q.q)),quiz:(u.quiz||[]).map(q=>pick(q.q+" "+(q.o||[]).join(" ")))});
+}
+function rqPool(k){
+  const P={mcq:[],pp:[]};
+  SUBJ[k].units.forEach(u=>{const s=RQ.sel[u.n];if(!s||!s.size)return;const m=rqLessonOf(k,u);
+    (u.quiz||[]).forEach((q,i)=>{if(s.has(m.quiz[i]))P.mcq.push({u,q})});
+    (u.pp||[]).forEach((q,i)=>{if(s.has(m.pp[i]))P.pp.push({u,q})})});
+  return P;
+}
+const rqShuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const rqTake=(a,n)=>{const x=RQ.shuf?rqShuffle(a):a;return n==="all"?x:x.slice(0,+n)};
+const rqMarks=q=>parseInt(q.marks,10)||0;
+function revq(body){
+  const H=A();RQ.sub=RQ.sub||H.subKey;try{H.prep(RQ.sub)}catch(e){}
+  const k=RQ.sub,U=SUBJ[k].units.filter(u=>u.lessons.length&&((u.pp||[]).length||(u.quiz||[]).length));
+  const S=window.HUBSET?HUBSET.get():{teacher:{},assess:{}};
+  body.innerHTML=`<h2>Revision questions</h2><p class="meta">Choose topics or single lessons, how many questions of each kind, then download a revision paper. The answers and mark scheme come at the end.</p>`;
+  subPick(body,v=>{RQ.sub=v;RQ.sel={};revq(body)},k);
+  const d=document.createElement("div");
+  d.innerHTML=`<h3 style="margin:14px 0 6px">1. Topics and lessons</h3>
+<div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:8px"><button class="btn sm" type="button" id="rqall">Select all</button><button class="btn sm" type="button" id="rqnone">Clear</button></div>
+<div id="rqtree" class="rqtree">${U.map(u=>`<details class="rqu"><summary><label class="set-chk"><input type="checkbox" data-u="${u.n}"> ${u.n}. ${esc(plain(u.name))}</label> <span class="meta">${(u.quiz||[]).length} MC · ${(u.pp||[]).length} exam-style</span></summary>
+<div class="rql">${u.lessons.map((l,i)=>`<label class="set-chk"><input type="checkbox" data-u="${u.n}" data-l="${i}"> ${esc(l.no||u.n+"."+(i+1))} ${esc(plain(l.t))}</label>`).join("")}</div></details>`).join("")}</div>
+<h3 style="margin:16px 0 6px">2. Questions</h3>
+<div class="set-grid"><label>Multiple choice<select id="rqm">${[0,5,10,15,20,30,40,"all"].map(n=>`<option value="${n}" ${String(n)===String(RQ.mcq)?"selected":""}>${n==="all"?"All":n}</option>`).join("")}</select></label>
+<label>Exam-style (structured)<select id="rqp">${[0,2,3,5,8,10,15,20,"all"].map(n=>`<option value="${n}" ${String(n)===String(RQ.pp)?"selected":""}>${n==="all"?"All":n}</option>`).join("")}</select></label></div>
+<label class="set-chk" style="margin-top:8px"><input type="checkbox" id="rqs" ${RQ.shuf?"checked":""}> A new random set each time (untick to keep syllabus order)</label>
+<h3 style="margin:16px 0 6px">3. Paper details</h3>
+<div class="set-grid"><label>Title<input type="text" id="rqt" maxlength="80" placeholder="Revision questions" value="${esc(RQ.title)}"></label>
+<label>Time allowed (optional)<input type="text" id="rqtm" maxlength="30" placeholder="e.g. 1 hour" value="${esc(RQ.time)}"></label>
+<label>School name (top of the paper)<input type="text" id="rqsc" maxlength="80" value="${esc((S.teacher&&S.teacher.school)||"")}"></label>
+<div><span class="meta">School logo</span><div class="row" style="gap:8px;align-items:center;margin-top:4px"><img id="rqlg" alt="School logo" style="height:42px;max-width:90px;object-fit:contain;background:#fff;border-radius:6px;padding:2px" src="${(S.assess&&S.assess.logo)||(typeof ASSESS_LOGO!=="undefined"?ASSESS_LOGO:"")}"><button class="btn sm" type="button" id="rqlb">Change logo</button><input type="file" id="rqlf" accept="image/*" hidden></div></div></div>
+<p class="meta" id="rqsum" role="status" style="margin-top:12px"></p>
+<div class="row" style="gap:8px;flex-wrap:wrap;margin-top:6px"><button class="btn pri" type="button" data-rf="pdf">Download PDF</button><button class="btn" type="button" data-rf="docx">Download Word</button><span class="meta" id="rqmsg" role="status"></span></div>`;
+  body.appendChild(d);
+  const tree=$("#rqtree",d);
+  const paintChecks=()=>{U.forEach(u=>{const s=RQ.sel[u.n]||new Set();const lbs=$$(`input[data-u="${u.n}"][data-l]`,tree);lbs.forEach(c=>c.checked=s.has(+c.dataset.l));
+    const top=$(`input[data-u="${u.n}"]:not([data-l])`,tree);top.checked=s.size===u.lessons.length&&s.size>0;top.indeterminate=s.size>0&&s.size<u.lessons.length});summary()};
+  const summary=()=>{const P=rqPool(k),nm=RQ.mcq==="all"?P.mcq.length:Math.min(+RQ.mcq,P.mcq.length),np=RQ.pp==="all"?P.pp.length:Math.min(+RQ.pp,P.pp.length);
+    const nt=Object.values(RQ.sel).reduce((a,s)=>a+(s&&s.size?1:0),0);
+    $("#rqsum",d).textContent=nt?`${nt} topic(s) chosen: ${P.mcq.length} multiple choice and ${P.pp.length} exam-style questions available. This paper will have ${nm} multiple choice and ${np} exam-style questions.`:"Choose at least one topic or lesson."};
+  tree.addEventListener("change",e=>{const c=e.target;if(!c.dataset.u)return;const u=U.find(x=>String(x.n)===c.dataset.u);const s=RQ.sel[u.n]||(RQ.sel[u.n]=new Set());
+    if(c.dataset.l==null){s.clear();if(c.checked)u.lessons.forEach((l,i)=>s.add(i))}else{c.checked?s.add(+c.dataset.l):s.delete(+c.dataset.l)}paintChecks()});
+  tree.addEventListener("click",e=>{if(e.target.closest("summary label"))e.stopPropagation()});
+  $("#rqall",d).onclick=()=>{U.forEach(u=>RQ.sel[u.n]=new Set(u.lessons.map((l,i)=>i)));paintChecks()};
+  $("#rqnone",d).onclick=()=>{RQ.sel={};paintChecks()};
+  $("#rqm",d).onchange=e=>{RQ.mcq=e.target.value;summary()};$("#rqp",d).onchange=e=>{RQ.pp=e.target.value;summary()};
+  $("#rqs",d).onchange=e=>RQ.shuf=e.target.checked;$("#rqt",d).oninput=e=>RQ.title=e.target.value;$("#rqtm",d).oninput=e=>RQ.time=e.target.value;
+  $("#rqsc",d).onchange=e=>{if(window.HUBSET){const s=HUBSET.get();s.teacher=s.teacher||{};s.teacher.school=e.target.value.trim();HUBSET.save()}};
+  $("#rqlb",d).onclick=()=>$("#rqlf",d).click();
+  $("#rqlf",d).onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{const z=await H.nxStdImg(r.result);if(!z)return;
+    const c=document.createElement("canvas"),m=Math.min(1,300/Math.max(z.w,z.h));c.width=Math.round(z.w*m);c.height=Math.round(z.h*m);const im=new Image();im.onload=()=>{c.getContext("2d").drawImage(im,0,0,c.width,c.height);const u=c.toDataURL("image/png");
+      $("#rqlg",d).src=u;if(window.HUBSET){const s=HUBSET.get();s.assess=s.assess||{};s.assess.logo=u;HUBSET.save()}};im.src=z.dataUrl};r.readAsDataURL(f)};
+  $$("[data-rf]",d).forEach(b=>b.onclick=async()=>{const msg=$("#rqmsg",d);const P=rqPool(k);
+    if(!P.mcq.length&&!P.pp.length){msg.textContent="Choose at least one topic or lesson first.";return}
+    const M=rqTake(P.mcq,RQ.mcq),Q=rqTake(P.pp,RQ.pp);if(!M.length&&!Q.length){msg.textContent="Set the number of questions above zero.";return}
+    $$("[data-rf]",d).forEach(x=>x.disabled=true);msg.textContent="Building the paper…";
+    try{const r=await rqExport(k,M,Q,b.dataset.rf,$("#rqsc",d).value.trim(),$("#rqlg",d).src);msg.textContent=r==="saved"?"Saved. Check your Downloads folder.":r==="declined"?"":"Could not save the file."}
+    catch(e){console.error(e);msg.textContent="Sorry, the paper could not be built."}
+    $$("[data-rf]",d).forEach(x=>x.disabled=false)});
+  paintChecks();
+}
+async function rqExport(k,M,Q,fmt,school,logo){
+  const H=A(),sb=SUBJ[k],B=[];
+  const rich=async html=>{const x=document.createElement("div");x.innerHTML=H.F(String(html||""));return H.nxInline(x).trim()};
+  const topics=[...new Set([...M,...Q].map(x=>x.u.n))].sort((a,b)=>a-b);
+  const total=M.length+Q.reduce((a,x)=>a+rqMarks(x.q),0);
+  const title=RQ.title.trim()||"Revision questions";
+  if(logo){const z=await H.nxStdImg(logo);if(z)B.push({t:"img",dataUrl:z.dataUrl,w:z.w,h:z.h,widthPct:Math.round(Math.min(16,16*z.w/z.h))})}
+  if(school)B.push({t:"p",text:school,bold:true,size:15,align:"center",after:20});
+  B.push({t:"p",text:sb.title,size:10,color:"555555",align:"center"});
+  B.push({t:"band",text:title});
+  B.push({t:"p",text:"Name: ________________________________   Class: ____________   Date: ____________",size:10});
+  const kv=[["Topics",topics.map(n=>{const u=sb.units.find(x=>x.n===n);return n+". "+plain(u.name)}).join("; ")],["Total marks",String(total)]];if(RQ.time.trim())kv.splice(1,0,["Time allowed",RQ.time.trim()]);
+  B.push({t:"kv",pairs:kv});
+  B.push({t:"p",text:"Answer all questions. Write your answers in the spaces provided. The marks for each question are shown in brackets [ ].",italic:true,size:10});
+  let n=0;
+  if(M.length){B.push({t:"h",l:2,text:`Section A: Multiple choice (${M.length} mark${M.length>1?"s":""})`});
+    if(M.some(x=>x.q.t==="mcq"))B.push({t:"p",text:"For each question, circle the letter of the correct answer.",size:10,color:"555555"});
+    for(const x of M){n++;B.push({t:"q",label:String(n),text:await rich(x.q.q),marks:1});
+      if(x.q.t==="mcq"&&x.q.o)for(let i=0;i<x.q.o.length;i++)B.push({t:"q",lvl:1,label:"ABCDEFG"[i],text:await rich(x.q.o[i])});
+      else B.push({t:"lines",n:2})}}
+  if(Q.length){B.push({t:"h",l:2,text:"Section B: Exam-style questions ("+Q.reduce((a,x)=>a+rqMarks(x.q),0)+" marks)"});
+    for(const x of Q){n++;B.push({t:"q",label:String(n),text:"**"+plain(x.q.title)+"**",marks:rqMarks(x.q)});
+      const div=document.createElement("div");div.innerHTML=H.F(String(x.q.q||""));await H.nxBlocks(div,B);
+      B.push({t:"lines",n:Math.min(14,Math.max(3,rqMarks(x.q)+1))})}}
+  /* answers */
+  B.push({t:"pb"});B.push({t:"h",l:2,text:"Answers and mark scheme"});
+  n=0;
+  if(M.length){B.push({t:"h",l:3,text:"Section A"});
+    const rows=[];for(const x of M){n++;const q=x.q;let ans;
+      if(q.t==="mcq")ans="ABCDEFG"[q.a]+"  "+plain(q.o[q.a]);else if(q.t==="num")ans=plain(String(q.a))+(q.u?" "+plain(q.u):"");else ans=Array.isArray(q.a)?q.a.map(plain).join(" / "):plain(String(q.a));
+      rows.push([String(n),ans,plain(q.e||"")])}
+    B.push({t:"table",head:["No.","Answer","Why"],rows,widths:[8,37,55],fontSize:9})}
+  if(Q.length){B.push({t:"h",l:3,text:"Section B"});
+    for(const x of Q){n++;B.push({t:"p",text:`**${n}. ${plain(x.q.title)}**  [${rqMarks(x.q)}]`});
+      const ms=Array.isArray(x.q.ms)?x.q.ms:String(x.q.ms||"").split(/\n+/);B.push({t:"ul",items:await Promise.all(ms.filter(Boolean).map(rich))})}}
+  const model={title:"",meta:title,footer:`${school?school+" | ":""}${sb.title} | ${title}`,blocks:B};
+  const fn=(title+" - "+sb.code+" topics "+topics.join(",")).replace(/[^\w .,-]+/g,"").slice(0,90);
+  const data=fmt==="docx"?await HUBDOC.docx(model):await HUBDOC.pdf(model);
+  return await H.saveFile(fn+"."+fmt,data);
 }
 function exam(body){
   const ex=EXAMS().sort((a,b)=>a.date<b.date?-1:1);

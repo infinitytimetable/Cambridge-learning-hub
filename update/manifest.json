@@ -1,15 +1,15 @@
 {
  "app": "LOTS Cambridge Learning Hub (Master, Windows)",
- "version": "4.2.1",
- "date": "2026-11-15",
+ "version": "4.3",
+ "date": "2026-11-17",
  "minSetup": "4.0",
- "notes": "Phones: compact header with the buttons behind a Menu button; hubs can be installed as apps.",
+ "notes": "Revision questions: pick topics or single lessons and export a revision paper (multiple choice and exam-style) with the answers and mark scheme at the end, school name and logo on top.",
  "files": [
   {
    "name": "hub.html",
    "path": "dist/hub.html",
-   "sha256": "fc0ed1a0f2a6ca2eea7b50d4eacd69cfc5d4aa3a3b3f8f4e625554519e195d2c",
-   "size": 43961162
+   "sha256": "3693761718ac5c434d23f0fc42b553f4b9eb45077f3f8a1b8943ca3d0f0d42fe",
+   "size": 43973862
   },
   {
    "name": "picker.html",

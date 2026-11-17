@@ -244,3 +244,7 @@ body:has(.x4hdr) header.top{position:static}
   header.top .nav a{font-size:15px!important;padding:6px 12px!important;min-height:0!important}
 }
 @media (display-mode:standalone){#fsbtn{display:none!important}}
+.rqtree{border:1px solid var(--line);border-radius:12px;max-height:340px;overflow:auto;background:var(--surface)}
+.rqu{border-bottom:1px solid var(--line)}.rqu:last-child{border-bottom:0}
+.rqu>summary{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;cursor:pointer}
+.rqu>summary .set-chk{margin:0}.rql{display:flex;flex-direction:column;gap:2px;padding:0 12px 10px 34px}.rql .set-chk{margin:2px 0}

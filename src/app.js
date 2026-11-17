@@ -36,7 +36,7 @@ function useSubject(k){
   document.documentElement.setAttribute("data-sub",k);
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
-window.HUBAPP={prep,states,get subKey(){return subKey},plain,F,saveFile:(n,d)=>saveFile(n,d)};
+window.HUBAPP={prep,states,get subKey(){return subKey},plain,F,saveFile:(n,d)=>saveFile(n,d),nxBlocks:(r,o)=>nxBlocks(r,o),nxInline:n=>nxInline(n),nxStdImg:s=>nxStdImg(s)};
 let THEME="";try{THEME=localStorage.getItem("hubtheme")||""}catch(e){}
 if(!THEME){prep(HUB.subs[0]);THEME=states[HUB.subs[0]].theme||""}
 if(THEME)document.documentElement.setAttribute("data-theme",THEME);
