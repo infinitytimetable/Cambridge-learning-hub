@@ -3,6 +3,18 @@ package zm.lots.teachinghub;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Dialog;
+import android.graphics.Color;
+import android.os.CancellationSignal;
+import android.os.ParcelFileDescriptor;
+import android.print.PageRange;
+import android.print.PrintAttributes;
+import android.print.PrintDocumentAdapter;
+import android.print.PrintDocumentInfo;
+import android.print.PrintManager;
+import android.view.Gravity;
+import android.widget.Button;
+import android.widget.LinearLayout;
 import android.content.ActivityNotFoundException;
 import android.content.ContentValues;
 import android.content.Context;
@@ -76,6 +88,12 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle b) {
         super.onCreate(b);
         prefs = getSharedPreferences("hub", MODE_PRIVATE);
+        /* after the app itself is updated, its built-in hub may be newer than an earlier download: start again from it */
+        String bundled = bundledSha();
+        if (!bundled.equals(prefs.getString("bundled", ""))) {
+            File old = hubFile(); if (old.exists()) old.delete();
+            prefs.edit().putString("bundled", bundled).putString("sha", bundled).apply();
+        }
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         root = new FrameLayout(this);
         web = new WebView(this);
@@ -301,6 +319,80 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void checkUpdate() { runOnUiThread(() -> checkForUpdate(true)); }
+
+        /* window.print() on the hub page */
+        @JavascriptInterface
+        public void printPage(String title) { runOnUiThread(() -> printWeb(web, title == null || title.isEmpty() ? "My Teaching Hub" : title, true)); }
+
+        /* a page the hub builds for printing (worksheets, sheets, packs): shown full screen with Print and Close */
+        @JavascriptInterface
+        public void showDoc(String html, String title, boolean autoPrint) { runOnUiThread(() -> openDoc(html, title, autoPrint)); }
+
+        @JavascriptInterface
+        public void printDoc() { runOnUiThread(() -> { if (docWeb != null) printWeb(docWeb, docTitle, false); }); }
+
+        @JavascriptInterface
+        public void openUrl(String u) {
+            runOnUiThread(() -> { try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(u))); } catch (Exception e) { toast("No app can open this link."); } });
+        }
+    }
+
+    /* ---------- printing (or Save as PDF) through Android's print service ---------- */
+    WebView docWeb; Dialog docDlg; String docTitle = "My Teaching Hub";
+
+    void printWeb(WebView w, String title, boolean main) {
+        try {
+            PrintManager pm = (PrintManager) getSystemService(Context.PRINT_SERVICE);
+            final PrintDocumentAdapter a = w.createPrintDocumentAdapter(title);
+            PrintDocumentAdapter wrap = new PrintDocumentAdapter() {
+                @Override public void onStart() { a.onStart(); }
+                @Override public void onLayout(PrintAttributes o, PrintAttributes n, CancellationSignal c, LayoutResultCallback cb, Bundle e) { a.onLayout(o, n, c, cb, e); }
+                @Override public void onWrite(PageRange[] p, ParcelFileDescriptor d, CancellationSignal c, WriteResultCallback cb) { a.onWrite(p, d, c, cb); }
+                @Override public void onFinish() { a.onFinish(); if (main) web.evaluateJavascript("window.dispatchEvent(new Event('afterprint'))", null); }
+            };
+            pm.print(title, wrap, new PrintAttributes.Builder().setMediaSize(PrintAttributes.MediaSize.ISO_A4).build());
+        } catch (Exception e) {
+            toast("Printing is not available on this device.");
+            if (main) web.evaluateJavascript("window.dispatchEvent(new Event('afterprint'))", null);
+        }
+    }
+
+    void openDoc(String html, String title, boolean autoPrint) {
+        if (docDlg != null) { try { docDlg.dismiss(); } catch (Exception e) { } }
+        docTitle = (title == null || title.trim().isEmpty()) ? "My Teaching Hub" : title.trim();
+        docDlg = new Dialog(this, android.R.style.Theme_Material_Light_NoActionBar_Fullscreen);
+        LinearLayout col = new LinearLayout(this); col.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout bar = new LinearLayout(this); bar.setOrientation(LinearLayout.HORIZONTAL); bar.setGravity(Gravity.CENTER_VERTICAL | Gravity.END);
+        bar.setBackgroundColor(Color.parseColor("#0B3B36")); bar.setPadding(16, 10, 16, 10);
+        Button pr = new Button(this); pr.setText("Print or save as PDF");
+        Button cl = new Button(this); cl.setText("Close");
+        bar.addView(pr); bar.addView(cl);
+        docWeb = new WebView(this);
+        docWeb.getSettings().setJavaScriptEnabled(true);
+        docWeb.getSettings().setLoadWithOverviewMode(true);
+        docWeb.getSettings().setUseWideViewPort(true);
+        docWeb.getSettings().setBuiltInZoomControls(true);
+        docWeb.getSettings().setDisplayZoomControls(false);
+        docWeb.addJavascriptInterface(new Bridge(), "LOTSANDROID");
+        final boolean[] printed = {false};
+        docWeb.setWebViewClient(new WebViewClient() {
+            @Override public void onPageFinished(WebView v, String url) {
+                v.evaluateJavascript("window.print=function(){LOTSANDROID.printDoc()};window.close=function(){};", null);
+                if (autoPrint && !printed[0]) { printed[0] = true; v.postDelayed(() -> printWeb(v, docTitle, false), 500); }
+            }
+            @Override public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest r) {
+                try { startActivity(new Intent(Intent.ACTION_VIEW, r.getUrl())); } catch (Exception e) { }
+                return true;
+            }
+        });
+        col.addView(bar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        col.addView(docWeb, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        docDlg.setContentView(col);
+        pr.setOnClickListener(v -> printWeb(docWeb, docTitle, false));
+        cl.setOnClickListener(v -> docDlg.dismiss());
+        docDlg.setOnDismissListener(d -> { if (docWeb != null) { docWeb.destroy(); docWeb = null; } docDlg = null; });
+        docWeb.loadDataWithBaseURL("https://" + HOST + "/app/", html, "text/html", "utf-8", null);
+        docDlg.show();
     }
 
     String BuildConfigVersion() {
