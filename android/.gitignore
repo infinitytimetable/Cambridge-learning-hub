@@ -1,0 +1,5 @@
+app/src/main/assets/hub.html
+app/src/main/assets/hub.sha256
+build/
+app/build/
+.gradle/

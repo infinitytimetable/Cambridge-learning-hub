@@ -1,0 +1,50 @@
+plugins {
+    id 'com.android.application'
+}
+
+def appVersion = rootProject.file('VERSION').text.trim()
+def parts = appVersion.tokenize('.').collect { it as int }
+
+android {
+    namespace 'zm.lots.teachinghub'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'zm.lots.teachinghub'
+        minSdk 24
+        targetSdk 34
+        versionCode parts[0] * 10000 + parts[1] * 100 + parts[2]
+        versionName appVersion
+    }
+
+    signingConfigs {
+        release {
+            storeFile rootProject.file('keystore/teachinghub.p12')
+            storeType 'pkcs12'
+            storePassword System.getenv('KS_PASS') ?: ''
+            keyAlias 'teachinghub'
+            keyPassword System.getenv('KS_PASS') ?: ''
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (System.getenv('KS_PASS')) signingConfig signingConfigs.release
+        }
+    }
+
+    androidResources {
+        noCompress 'html'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core:1.13.1'
+    implementation 'androidx.webkit:webkit:1.11.0'
+}
