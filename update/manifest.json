@@ -1,15 +1,15 @@
 {
  "app": "LOTS Cambridge Learning Hub (Master, Windows)",
- "version": "4.4",
- "date": "2026-11-17",
+ "version": "4.5",
+ "date": "2026-11-25",
  "minSetup": "4.0",
- "notes": "IGCSE Chemistry topical questions now use the actual diagrams and tables cut from the question papers (watermarks removed) instead of redrawn ones; diagrams in exported papers and notes are printed at their true size.",
+ "notes": "Install app button: one tap shows the right way to install on Android (app download), iPhone/iPad, Windows and Chrome/Edge, including copying the Android app to boards without Wi-Fi.",
  "files": [
   {
    "name": "hub.html",
    "path": "dist/hub.html",
-   "sha256": "56226671fd7ce63789eece27f4582f6e0b76562919edc486636951481a724a92",
-   "size": 45659269
+   "sha256": "4f69fac0b20e8c4073ef36a677b1fb40fef9e143fd78ac18227dccb4c004e9cc",
+   "size": 45663640
   },
   {
    "name": "picker.html",
